@@ -1,0 +1,68 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build artifacts
+dist/
+build/
+*.bundle.js
+*.min.js
+*.min.css
+
+# Development
+.env
+.env.local
+.env.*.local
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime
+.cache/
+temp/
+tmp/
+*.tmp
+
+# OS files
+.AppleDouble
+.LSOverride
+._*
+
+# IDE and editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.jshintrc
+
+# Testing
+coverage/
+.nyc_output/
+.mocha-report/
+test-results/
+*.lcov
+
+# Misc
+.turbo/
+dist-ssr/
+*.local
