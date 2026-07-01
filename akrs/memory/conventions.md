@@ -15,10 +15,15 @@ color, render budgets, and code style. If a Road needs a convention not listed h
 - Color channels stored 0..1 float in the pipeline; clamp + gamma + ×255 only at write-out.
 
 ## Rendering budgets (defaults; tune in PLAN-09)
-- Max ray/reflection depth: 4. — **Assumption (Med)** (data.md: "ray depth limit").
-- Anti-aliasing: supersampling via jittered sub-pixel samples. — **Assumption (Med)** (data.md: "anti-aliasing").
+- Max ray/reflection depth: 4. — **Assumption (Med)** (data.md: "ray depth limit"). Wired as
+  `Renderer`'s `maxDepth` param, PLAN-04/R3.
+- Anti-aliasing: supersampling via jittered sub-pixel samples. — **Assumption (Med)** (data.md:
+  "anti-aliasing"). Sample count default: 4 per pixel. — **Assumption (Med)**, no exact count in
+  data.md; wired as `Renderer`'s `samples` param, PLAN-04/R4.
 - Shadows: hard only (single shadow ray per light). — **Decided** (data.md: "hard shadows").
 - Lights: point lights. — **Decided**. Plus a constant ambient term.
+- Ambient coefficient: numeric default **Unknown** — `materials.shade()` reads `scene.ambient`,
+  falling back to 0 (neutral, not invented) when unset. See `STATE.md` → Open questions.
 
 ## Code style
 - Vanilla JS, **ES modules**, browser-native (no bundler assumed — confirm in STATE). — **Decided**/Assumption.

@@ -137,6 +137,20 @@ For questions or contributions, review the AKRS framework in the KERNEL and cons
 # weekly usage : 
 -78%  - > .... plan 2 -done 81%  ,
 -plan 2 -> worker usage : 9% with sonnet-5 , and about 1% weekly.
+------------------
 -plan 3 : leader  : 8% context window , 19% - 9% = 10% usage with opus4.8 Extra thinking , about 1% weekly usage .
    worker: all three tasks in same session : 101.9k/967k (11%) context window , sonnet-5 med, 
-   26
+   26 % - 19% = 7% usage  about 1% weekly usage.
+-----------------
+plan 4 : planing leader : 12%- 8% = 4% context window as extra on what it has  ,37% - 26% =11% usage , 84%-83% = 1% weekly   , i use the same session of planing for the plan 3
+   worker : same session of the worker in plane 5 first task . 45-40% = 5% usage ,89 - 88% =1%weekly  , 14-8 = 6% context window.
+-------------------
+plan 5 : (plan 4 , rely on task in plan 5 , so i had to create it first ) : 
+    planing leader : i have to use same session of planing for 3-4 , context window : 13% - 12% = 1% extra , usage 41% - 37% = 4% usage , 85% - 84% = 1% weekly usage.
+     worker : first task is required before starting with plan 4 (i start new session),
+     40 -37%  = 3% usage  ,88% -88%  weekly    , 8% context window 
+     task-2 :48% -45% = 3%usage ,89% -89% weekly ,17 -14% = 3% extra context window
+-----
+plane 6 : (new session )
+   leader :   -48% usage , -89% weekly , 
+ 

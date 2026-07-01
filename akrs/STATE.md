@@ -1,11 +1,119 @@
 # STATE
-Updated: 2026-07-01T00:00Z by claude-code (Worker / Sonnet 5)
+Updated: 2026-07-01T14:00Z by claude-code (Worker / Sonnet 5)
 
 ## Active
-- **PLAN-03 (Materials & Shading) complete** (S1–S3 landed). Handing back to Leader for PLAN-04
-  (ray tracer), which consumes the `shade()`/`reflect()` contract shipped here.
+- **PLAN-04 (Ray Tracer, R1–R4) and PLAN-05 (Camera & Input, C1–C2) are both complete.** No Road
+  is currently ACTIVE. Real DOM/engine wiring for `Controls` still depends on PLAN-06/E3 (input
+  manager, not yet built) — `Controls` is coded to that interface and verified with synthetic
+  input per its Road's acceptance criteria, same pattern used for PLAN-04/R1 before the camera
+  landed. Next work needs a Leader planning pass to pick the next Plan (e.g. PLAN-06 engine
+  runtime, to unblock real controls + collision).
 
 ## Done
+- Road `roads/PLAN-05/C2-controls.md` (Status: DONE + superseded by memory/camera-input.md): built
+  `src/camera/Controls.js` — `update(camera, input, dt)` reads a normalized, polled input snapshot
+  (no DOM/pointer-lock listeners; the engine input manager owns raw events). Mouse look (yaw/pitch
+  from `mouseDeltaX/Y`, only while `input.pointerLocked`) is gated separately from WASD movement
+  (yaw-relative on the XZ plane via a **flat** forward/right basis computed from yaw alone, so
+  pitch never tilts movement and Y is untouched); pitch clamped to ±89°; FOV adjust via
+  `input.fovDelta` clamped to `[fovMin, fovMax]`, applied through `camera.setFov()`. Defaults:
+  `moveSpeed = 5` m/s, `mouseSensitivity = 0.0022` rad/px, `invertY = false`, `pitchLimit = 89°`,
+  `fovMin/fovMax = 20°/100°` — all constructor overrides pending real settings wiring ([[ui]]).
+  Edited `src/camera/index.js` to export `Controls`. **PLAN-06/E3 (input manager) does not exist
+  yet** — `Controls` was built directly against the normalized-input contract described in
+  `memory/camera-input.md` (a design decision recorded there now, since no exact field shape
+  existed before this Road); E3 must conform to it or renegotiate. Scratch-assert verification
+  passed with a synthetic input state (no DOM): W moves along yaw-forward on the XZ plane with Y
+  unchanged, both at yaw=0 and after a 90° yaw turn (yaw-relative, not world-relative); D strafes
+  along yaw-right; movement stays flat even while pitched; a mouse delta yaws+pitches the camera
+  only when `pointerLocked` is true (no-op otherwise); extreme mouse deltas saturate pitch at
+  exactly +89°/−89°; `fovDelta` adjusts FOV by the delta and clamps at `fovMax`. `memory/
+  camera-input.md` updated with the input contract, pitch-clamp, and yaw-relative-movement
+  decisions. **PLAN-05 (C1+C2) now complete** per each Road's own acceptance criteria.
+- Road `roads/PLAN-04/R4-image-quality.md` (Status: DONE + superseded by memory/rendering.md):
+  edited `src/render/Renderer.js` — pixel loop now takes an injected `samples` param (default 4);
+  for each sample, jitters the sub-pixel position (`px + jitterX - 0.5, py + jitterY - 0.5` fed to
+  `camera.rayFor`, uniform random in `[0,1)`; `samples === 1` uses a fixed center jitter of 0.5 for
+  determinism) and averages the resulting linear colors before a single `writeColor` call per
+  pixel — clamp+gamma still applied exactly once, never per-sample. No changes to
+  `writeColor.js` (gamma already injected). Scratch-assert verification passed: `samples: 1`
+  reproduced the exact byte output of a plain, un-jittered `traceRay` call (matches R3); a
+  fake-camera/fake-scene edge case (hit iff the jittered sample landed right-of-center) with
+  `samples: 64` produced a gamma-encoded byte strictly between 0 and 255 (neither pure background
+  nor pure foreground — anti-aliased, not a hard stair-step); a flat mid-gray background rendered
+  through the sample-averaging path still round-tripped through gamma exactly once (matches the
+  un-averaged single-gamma byte). `memory/rendering.md` updated: R4 landed, **PLAN-04 complete**.
+  Recorded the AA default (`samples = 4`) as an assumption in `memory/conventions.md` alongside the
+  existing `maxDepth = 4` default; surfaced the still-unset ambient-coefficient numeric default in
+  `STATE.md` → Open questions (shade() already falls back to 0, not an invented value).
+- Road `roads/PLAN-04/R3-reflections.md` (Status: DONE + superseded by memory/rendering.md):
+  extended `src/render/trace.js`'s `traceRay` to `traceRay(ray, scene, lights, background, depth =
+  0, maxDepth = 4)` — after local shade, calls `hit.material.reflect(hit, ray)`; if it returns
+  `{ ray, weight }`, recurses on the reflection ray at `depth + 1` and accumulates `local +
+  mulColor(weight, reflectedColor)` (imported `mulColor` from `materials/shading.js`, not
+  reimplemented), stopping once `depth >= maxDepth` (returns local color only at the cap). Edited
+  `Renderer.js` to inject `maxDepth` (default 4) and pass it through. No edits to
+  `src/materials/` or `src/geometry/` — the material still owns direction/weight, the tracer
+  still owns recursion + the depth cap. Scratch-assert verification passed: a mirror sphere
+  reflecting a lit red diffuse sphere showed a red-dominant, above-ambient color; a metallic
+  sphere reflecting an emissive white sphere showed a reflection tinted exactly proportional to
+  its albedo (G/R and B/R ratios matched albedo ratios to 1e-6); a purely diffuse scene's
+  `traceRay` output matched its bare `material.shade()` call exactly (no spurious reflection
+  term, since `Diffuse.reflect()` inherits the base `null`); two facing mirror planes
+  ping-ponging a normal-incidence ray returned exactly the local ambient color at `maxDepth = 0`,
+  and terminated cleanly (no throw, finite result, strictly more accumulated color than the
+  depth-0 case) at `maxDepth = 100` — confirming the cap prevents unbounded recursion.
+  `memory/rendering.md` updated: R3 landed.
+- Road `roads/PLAN-04/R2-shading-shadows.md` (Status: DONE + superseded by memory/rendering.md):
+  added `src/render/trace.js` exporting `traceRay(ray, scene, lights, background)` — closest hit
+  via `scene.intersect`, color via `hit.material.shade(hit, ray, scene, lights)` (which already
+  owns per-light hard shadows per `memory/materials.md`), miss → `background`; stays linear, no
+  clamp/gamma. Edited `Renderer.render(camera)` → `render(camera, scene)` so the pixel loop calls
+  `traceRay` per pixel instead of writing a flat background (signature change was necessary — R1
+  had no `scene`/`lights` to pass; nothing outside `src/render/` touched). `src/render/index.js`
+  now also exports `traceRay`. Scratch-assert verification passed: a one-sphere-one-light scene —
+  a ray through the sphere returned a shaded (non-background, albedo-tinted) color; a ray past the
+  sphere returned exactly `background`; adding a second occluding sphere directly between the hit
+  point and the light darkened that same pixel (still above 0 from ambient, not pure black) versus
+  the unoccluded case; an end-to-end `Renderer.render(camera, scene)` call showed a visibly
+  different center pixel (lit disc) vs. corner pixel (background), alpha = 255 throughout.
+  `memory/rendering.md` updated: R2 marked landed.
+- Road `roads/PLAN-04/R1-primary-rays.md` (Status: DONE + superseded by memory/rendering.md): built
+  `src/render/Renderer.js` (`{ width, height, background, gamma }` constructor params injected,
+  defaults mirroring `conventions`; `render(camera)` loops every pixel, casts `camera.rayFor(px,
+  py, width, height)`, currently writes the constant background — no closest-hit/shading/
+  reflections yet, R2–R3 own that; returns a DOM-free `{ width, height, data: Uint8ClampedArray }`
+  buffer for the boot layer to blit) and `src/render/writeColor.js` (linear `Vector3` →
+  clamp[0,1] → gamma 2.2 → ×255 → RGBA8 write at a byte index, alpha = 255, single write-out — no
+  double gamma), plus `src/render/index.js` barrel. Scratch-assert verification passed (fake
+  camera returning a fixed `Ray`): buffer is `Uint8ClampedArray` of length `W*H*4`; every pixel
+  equals the gamma-encoded background byte (mid-gray linear 0.5 round-trips to
+  `round(0.5^(1/2.2)*255)`, not raw `0.5*255` — confirms no double/missing gamma); alpha = 255
+  everywhere. `memory/rendering.md` updated: R1 marked landed (was blocked on PLAN-05/C1, now
+  built against the landed `rayFor` contract). **Proves the camera→pixel path.**
+- Road `roads/PLAN-05/C1-camera.md` (Status: DONE + superseded by memory/camera-input.md): built
+  `src/camera/Camera.js` (position, yaw/pitch (radians), fov/near/far; `basis()` derives
+  forward/right/up from yaw/pitch — yaw about +Y, pitch about local right, forward = −Z at
+  yaw=pitch=0; `rayFor(px,py,width,height)` casts through the pixel center, spread by vertical
+  FOV + aspect, rotated by the basis, normalized, origin = position; `viewMatrix()` via
+  `Matrix4.lookAt(position, position+forward, worldUp)`; `projectionMatrix(aspect)` via
+  `Matrix4.perspective(fov, aspect, near, far)`; `setFov()` runtime setter) and `src/camera/index.js`
+  barrel. No controls/input, no DOM events — C2 owns that. Scratch-assert verification passed:
+  center-pixel ray ≈ (0,0,−1) and unit length; all four corner rays unit length and symmetric
+  (left/right and top/bottom mirrored, correct sign per quadrant); yawing 90° about +Y rotates
+  `basis().forward` from −Z to −X exactly; `projectionMatrix` maps `z=−near`→NDC −1 and
+  `z=−far`→NDC +1. `memory/camera-input.md` contract unchanged — implementation matches as shipped.
+  **Unblocks PLAN-04/R1.**
+- Phase E (Leader): generated PLAN-05 Tasks + Roads (C1 first-person camera, C2 controls) in
+  `akrs/tasks/PLAN-05/` + `akrs/roads/PLAN-05/`. Recorded the camera FOV decision in
+  `memory/camera-input.md` (FOV = vertical, aspect = width/height; `rayFor` through pixel center,
+  shared FOV meaning with `projectionMatrix`). C1 is buildable now; C2 blocked on PLAN-06/E3.
+- Phase D (Leader): generated PLAN-04 Tasks + Roads (R1 primary rays, R2 shading+shadows, R3
+  reflections, R4 image quality) in per-plan subfolders. Recorded PLAN-04 decisions in
+  `memory/rendering.md`: `traceRay(ray, scene, lights, depth)` entry + reflection accumulation
+  (`local + mulColor(weight, recurse)`), DOM-free Renderer writing an ImageData buffer (boot blits
+  it), render params injected (owned by conventions), AA = jittered sub-samples averaged in linear
+  space. Flagged R1's camera prerequisite. Marked PLAN-02/03 complete in `tasks/README.md`.
 - Road `roads/PLAN-03/S3-reflection.md` (Status: DONE + superseded by memory/materials.md): added
   `reflect(hit, ray) → { ray: Ray, weight: Vector3 } | null` to the material types. `Material`
   base default returns `null` (`Diffuse`/`Emissive` inherit it unchanged — no edits needed to
@@ -155,8 +263,17 @@ Updated: 2026-07-01T00:00Z by claude-code (Worker / Sonnet 5)
 - Phase B: generated PLAN-01 Tasks + Roads (M1–M4) in `akrs/tasks/` + `akrs/roads/`; recorded Matrix4 storage + quaternion-consistency decisions in `memory/math.md`.
 
 ## Next
-- **PLAN-03 done.** Leader to assign PLAN-04 (ray tracer): consumes `materials.shade()`/`reflect()`
-  and the new `Scene.intersect()` (added as a scope exception during S2 — see Done log).
+- **PLAN-04 (R1–R4) and PLAN-05 (C1–C2) are both complete** — a reference scene renders
+  reflections + shadows through `Renderer.render(camera, scene)`, and `Controls.update(camera,
+  input, dt)` drives that camera from a normalized input snapshot. Pixel-sample regression tests
+  deferred to PLAN-10 per `plans/PLAN-04-ray-tracer.md`.
+- Confirm the ambient-coefficient numeric default (see Open questions) before building a reference
+  scene for real content.
+- `Controls` cannot be exercised end-to-end in a real browser until PLAN-06/E3 (input manager)
+  lands and supplies the `{ forward, backward, left, right, mouseDeltaX, mouseDeltaY,
+  pointerLocked, fovDelta }` shape recorded in `memory/camera-input.md`.
+- No Road is currently ACTIVE; next work needs a Leader planning pass (Mode 3/4) to pick the next
+  Plan (PLAN-06 engine runtime is the natural next step — it unblocks real controls + collision).
 
 ## Open questions
 - **Coordinate convention** — assume right-handed, +Y up, camera looks −Z? (owner: `memory/conventions.md`; assumption, confirm)
@@ -165,3 +282,6 @@ Updated: 2026-07-01T00:00Z by claude-code (Worker / Sonnet 5)
 - **Build tooling** — assume none (serve ES modules directly via a static dev server, no bundler)? (assumption, confirm)
 - **Save storage** — assume browser `localStorage` with a versioned JSON schema? (owner: `memory/gameplay.md`; assumption, confirm)
 - **Framework removal** — `02-Generation §7` says strip `docs/akrs/framework/` from a shipped project. Kept here intentionally (it is this repo's versioned source and your confirmed Source of Truth). Confirm keep vs. move-before-ship.
+- **Ambient coefficient numeric default** — `materials.shade()` reads `scene.ambient`, falling
+  back to 0 (neutral) when unset; no scene currently sets a non-zero default. (owner:
+  `memory/conventions.md`; confirm the intended default before a reference scene ships.)

@@ -1,7 +1,9 @@
 # Roads — generated on demand (Phase B / Mode 3)
 A Road is the **execution contract** for one Task and is created **only when that work is
 requested** — never in advance. Exactly **one Road per Task**; the Leader chooses it, the Worker
-follows it. PLAN-01/02 Roads have landed; PLAN-03 (S1–S3) is generated and queued.
+follows it. PLAN-01/02/03 Roads have landed; PLAN-04 (R1–R4) and PLAN-05 (C1–C2) are generated
+and queued. **Build PLAN-05/C1 (camera) first** — it unblocks PLAN-04/R1. (PLAN-05/C2 is itself
+blocked on PLAN-06/E3.)
 
 Naming:
 - PLAN-01/02 (legacy, flat): `roads/<PLAN>-<PHASE>-<slug>.md`, e.g. `roads/PLAN-01-M1-vectors-ray.md`.
