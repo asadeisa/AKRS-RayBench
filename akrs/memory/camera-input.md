@@ -22,12 +22,15 @@ Owns: the first-person camera contract and the player input contract. Truth live
 - Mouse sensitivity + invert-Y: settings-driven, defaults TBD ([[ui]]). `Controls` ships defaults
   (`mouseSensitivity = 0.0022` rad/px, `invertY = false`, `moveSpeed = 5` m/s) as constructor
   overrides pending real settings wiring — **Assumption (Med)**.
-- **Input-manager contract (PLAN-06/E3, not yet built):** `Controls.update(camera, input, dt)`
-  expects `input = { forward, backward, left, right: boolean, mouseDeltaX, mouseDeltaY: number,
-  pointerLocked: boolean, fovDelta: number }` — a normalized, polled snapshot per frame. `Controls`
-  was built against this shape (same pattern as PLAN-04/R1 coding to `Camera` before C1 landed);
-  E3 must conform to it or this contract must be renegotiated. — **Assumption (Med), confirm when
-  building E3**.
+- **Input-manager contract (PLAN-06/E3 — LANDED):** `Controls.update(camera, input, dt)` consumes
+  `input = { forward, backward, left, right: boolean, mouseDeltaX, mouseDeltaY: number,
+  pointerLocked: boolean, fovDelta: number }` — a normalized, polled snapshot per frame.
+  `InputManager.poll()` ([[engine]]) returns exactly this shape (poll-and-clear on the deltas);
+  verified end-to-end against `Controls`. — **Decided (PLAN-06/E3)**.
+- **Snapshot extension (PLAN-07/P2 — landed):** `poll()` also carries an additive **`interact`** edge
+  (`KeyE`, edge-detected via `!e.repeat`, poll-and-clear) consumed by gameplay interactables
+  ([[gameplay]]), **not** by `Controls` (movement/look fields are untouched). Input stays
+  single-owned by the engine input manager. — **Decided (PLAN-07/P2)**.
 - Pitch clamp: ±89° (`Controls`' `pitchLimit`, default `89° in radians`). — **Decided (PLAN-05/C2)**.
 - Movement is yaw-relative on the XZ plane only — pitch never tilts movement; Y is untouched by
   WASD. — **Decided (PLAN-05/C2)**.

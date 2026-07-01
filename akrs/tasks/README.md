@@ -33,19 +33,39 @@ Shipped: `src/geometry/` primitives, Mesh, Node, Scene (incl. `Scene.intersect`)
 | [reflection](PLAN-03/S3-reflection.md) | S3 | `../roads/PLAN-03/S3-reflection.md` | DONE + superseded by memory/materials.md |
 Shipped: `src/materials/` Diffuse/Mirror/Metallic/Emissive + `shade()`/`reflect()` + shading helpers.
 
-## PLAN-04 — Ray Tracer (generated; R1–R4 queued) — folder [PLAN-04/](PLAN-04/)
+## PLAN-04 — Ray Tracer ✅ complete — folder [PLAN-04/](PLAN-04/)
 | Task | Phase | Road | Status |
 |---|---|---|---|
-| [primary-rays](PLAN-04/R1-primary-rays.md) | R1 | `../roads/PLAN-04/R1-primary-rays.md` | ACTIVE (blocked by PLAN-05/C1 camera) |
-| [shading-shadows](PLAN-04/R2-shading-shadows.md) | R2 | `../roads/PLAN-04/R2-shading-shadows.md` | ACTIVE (queued, needs R1) |
-| [reflections](PLAN-04/R3-reflections.md) | R3 | `../roads/PLAN-04/R3-reflections.md` | ACTIVE (queued, needs R2) |
-| [image-quality](PLAN-04/R4-image-quality.md) | R4 | `../roads/PLAN-04/R4-image-quality.md` | ACTIVE (queued, needs R3) |
-Execution order: R1 → R2 → R3 → R4. Owner: `src/render/` → `memory/rendering.md`.
-⚠ R1 needs `camera.rayFor()` (PLAN-05/C1) — build that first (deps M2/M3 are done).
+| [primary-rays](PLAN-04/R1-primary-rays.md) | R1 | `../roads/PLAN-04/R1-primary-rays.md` | DONE + superseded by memory/rendering.md |
+| [shading-shadows](PLAN-04/R2-shading-shadows.md) | R2 | `../roads/PLAN-04/R2-shading-shadows.md` | DONE + superseded by memory/rendering.md |
+| [reflections](PLAN-04/R3-reflections.md) | R3 | `../roads/PLAN-04/R3-reflections.md` | DONE + superseded by memory/rendering.md |
+| [image-quality](PLAN-04/R4-image-quality.md) | R4 | `../roads/PLAN-04/R4-image-quality.md` | DONE + superseded by memory/rendering.md |
+Shipped: `src/render/` Renderer + `traceRay` (shadows, recursive reflections, gamma, jittered AA).
 
-## PLAN-05 — Camera & Input (generated; C1 ready, C2 blocked) — folder [PLAN-05/](PLAN-05/)
+## PLAN-05 — Camera & Input ✅ complete — folder [PLAN-05/](PLAN-05/)
 | Task | Phase | Road | Status |
 |---|---|---|---|
-| [camera](PLAN-05/C1-camera.md) | C1 | `../roads/PLAN-05/C1-camera.md` | ACTIVE (**ready — do first; unblocks PLAN-04/R1**) |
-| [controls](PLAN-05/C2-controls.md) | C2 | `../roads/PLAN-05/C2-controls.md` | ACTIVE (blocked by PLAN-06/E3 input manager) |
-Owner: `src/camera/` → `memory/camera-input.md`. C1 deps (M2/M3) are done — buildable now.
+| [camera](PLAN-05/C1-camera.md) | C1 | `../roads/PLAN-05/C1-camera.md` | DONE + superseded by memory/camera-input.md |
+| [controls](PLAN-05/C2-controls.md) | C2 | `../roads/PLAN-05/C2-controls.md` | DONE + superseded by memory/camera-input.md |
+Shipped: `src/camera/` Camera (`rayFor` / view / projection) + Controls (coded to PLAN-06/E3 input; real wiring lands with E3).
+
+## PLAN-06 — Engine Runtime ✅ complete — folder [PLAN-06/](PLAN-06/)
+| Task | Phase | Road | Status |
+|---|---|---|---|
+| [game-loop](PLAN-06/E1-game-loop.md) | E1 | `../roads/PLAN-06/E1-game-loop.md` | DONE + superseded by memory/engine.md |
+| [entity-system](PLAN-06/E2-entity-system.md) | E2 | `../roads/PLAN-06/E2-entity-system.md` | DONE + superseded by memory/engine.md |
+| [managers](PLAN-06/E3-managers.md) | E3 | `../roads/PLAN-06/E3-managers.md` | DONE + superseded by memory/engine.md |
+| [events-collision](PLAN-06/E4-events-collision.md) | E4 | `../roads/PLAN-06/E4-events-collision.md` | DONE + superseded by memory/engine.md |
+Shipped: `src/engine/` Loop, Entity/World, Scene/Input/Asset managers, EventBus, Collision. `InputManager` closes the PLAN-05/C2 Controls loop end-to-end.
+
+## PLAN-07 — Gameplay & Puzzles ✅ complete — folder [PLAN-07/](PLAN-07/)
+| Task | Phase | Road | Status |
+|---|---|---|---|
+| [rooms](PLAN-07/P1-rooms.md) | P1 | `../roads/PLAN-07/P1-rooms.md` | DONE + superseded by memory/gameplay.md |
+| [interactables](PLAN-07/P2-interactables.md) | P2 | `../roads/PLAN-07/P2-interactables.md` | DONE + superseded by memory/gameplay.md |
+| [reflective-puzzle](PLAN-07/P3-reflective-puzzle.md) | P3 | `../roads/PLAN-07/P3-reflective-puzzle.md` | DONE + superseded by memory/gameplay.md |
+| [persistence](PLAN-07/P4-persistence.md) | P4 | `../roads/PLAN-07/P4-persistence.md` | DONE + superseded by memory/gameplay.md |
+Execution order: P1 → P2 → P3 → P4 (all landed). Owner: `src/game/` → `memory/gameplay.md`.
+Shipped: `src/game/` Room/RoomManager, events + Switch/Door/Collectible + `worldColliders`, an
+additive `interact` edge on `InputManager.poll()`, `beam.js`/`Puzzle.js` (reflective puzzle,
+`LEVEL_WON`), `save.js` (versioned `localStorage` save/load/clear + `snapshot`/`restart`).

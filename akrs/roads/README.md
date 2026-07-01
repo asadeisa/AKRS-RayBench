@@ -1,9 +1,10 @@
 # Roads — generated on demand (Phase B / Mode 3)
 A Road is the **execution contract** for one Task and is created **only when that work is
 requested** — never in advance. Exactly **one Road per Task**; the Leader chooses it, the Worker
-follows it. PLAN-01/02/03 Roads have landed; PLAN-04 (R1–R4) and PLAN-05 (C1–C2) are generated
-and queued. **Build PLAN-05/C1 (camera) first** — it unblocks PLAN-04/R1. (PLAN-05/C2 is itself
-blocked on PLAN-06/E3.)
+follows it. PLAN-01…06 Roads have landed (PLAN-06 E1–E4 complete — engine loop, managers, events +
+collision all shipped). **PLAN-07 (P1–P4) is now complete** — rooms, interactables + wall collision
+(and an additive `interact` input edge), the reflective mirror puzzle, and restart + save/load have
+all shipped; see `memory/gameplay.md` → "Landed".
 
 Naming:
 - PLAN-01/02 (legacy, flat): `roads/<PLAN>-<PHASE>-<slug>.md`, e.g. `roads/PLAN-01-M1-vectors-ray.md`.

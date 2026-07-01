@@ -1,15 +1,95 @@
 # STATE
-Updated: 2026-07-01T14:00Z by claude-code (Worker / Sonnet 5)
+Updated: 2026-07-02T13:00Z by claude-code (Worker / Sonnet 5)
 
 ## Active
-- **PLAN-04 (Ray Tracer, R1–R4) and PLAN-05 (Camera & Input, C1–C2) are both complete.** No Road
-  is currently ACTIVE. Real DOM/engine wiring for `Controls` still depends on PLAN-06/E3 (input
-  manager, not yet built) — `Controls` is coded to that interface and verified with synthetic
-  input per its Road's acceptance criteria, same pattern used for PLAN-04/R1 before the camera
-  landed. Next work needs a Leader planning pass to pick the next Plan (e.g. PLAN-06 engine
-  runtime, to unblock real controls + collision).
+- **PLAN-07 (Gameplay & Puzzles) is complete** — P1 → P2 → P3 → P4 all executed and landed (see
+  Done). `src/game/` now wires engine + geometry + camera + materials into the first playable slice:
+  rooms → interactables/collision → the reflective puzzle → restart/save.
+- PLAN-01 … PLAN-07 are all complete (math, geometry, materials, ray tracer, camera+input, engine,
+  gameplay). **No live browser boot yet** — `Loop` + `Renderer.render(camera, scene)` +
+  `InputManager` + `src/game/` have not been assembled into `src/main.js`; that is PLAN-08 (UI/boot).
 
 ## Done
+- **PLAN-07 (Gameplay & Puzzles, P1–P4) executed** (Worker pass, in order per `STATE.md` → Next).
+  Built `src/game/`: `Room.js` + `RoomManager.js` (opaque `SceneManager` registration, `enter(key)`/
+  `update(playerPos)` transition-volume swap); `events.js` (gameplay-owned event names) +
+  `Switch.js`/`Door.js`/`Collectible.js` (proximity + `interact`-edge switch, linked-switch door with
+  an AABB collider while closed, proximity auto-pick collectible) + `worldColliders(scene, doors)`
+  (collider-list assembly for `Collision.resolve`); additive `interact` field on
+  `InputManager.poll()` (`KeyE`, edge-detected, poll-and-clear — every prior field unchanged);
+  `beam.js` (`traceBeam` — reflecting ray march reusing `scene.intersect` + `material.reflect` +
+  `maxDepth`, no reimplementation) + `Puzzle.js` (switch-toggled mirror-**normal** swap — see the
+  Worker-level decision below — re-traces and emits `LEVEL_WON` once); `save.js` (`save`/`load`/
+  `clear`, versioned `mirror-forge:save`, plus `snapshot()`/`restart()` bridging to the live P1–P3
+  objects). Full detail + scratch-assert results recorded in `memory/gameplay.md` → "Landed".
+  **Worker-level decision** (the Road left "two orientations" unspecified): a movable mirror's
+  orientation is realized by swapping the mirror's own geometry `normal` in place (a `Plane`), not by
+  `Node.setRotation` — geometry `intersect()` tests the world-space ray directly against its own
+  stored fields; `Node` transforms only feed `worldBounds()` (collision), never ray intersection, so
+  rotating the wrapping `Node` would not have changed the reflected direction. Recorded in
+  `memory/gameplay.md` → Decisions. All four Roads verified via scratch-assert (no DOM/localStorage —
+  synthetic positions/input, a stubbed `localStorage`); set all four Roads
+  `DONE + superseded by memory/gameplay.md`. **PLAN-07 (Gameplay & Puzzles) now complete** — unblocks
+  PLAN-08 (UI), including the main-menu "continue" (`load()`) and the boot assembly step.
+- Phase G (Leader): generated PLAN-07 Tasks + Roads (P1 rooms & navigation, P2 interactables +
+  collision wiring, P3 reflective puzzle + win, P4 persistence) in `akrs/tasks/PLAN-07/` +
+  `akrs/roads/PLAN-07/`. Recorded PLAN-07 decisions in `memory/gameplay.md`: `src/game/` is the
+  integration/injection layer (imports engine + geometry + camera + render + math); `Room` descriptor
+  `{ key, scene, spawn, transitions }` + `RoomManager` registering opaque scenes with `SceneManager`
+  and swapping on transition-volume entry; **gameplay-owned event names** in `src/game/events.js`
+  (`SWITCH_TOGGLED`, `DOOR_OPENED/CLOSED`, `COLLECTIBLE_PICKED`, `ROOM_ENTERED`, `LEVEL_WON`,
+  `GAME_RESTARTED`); interaction = **proximity + `interact`** (an additive `interact` edge added to
+  the engine `InputManager.poll()` in P2 — `Controls` unaffected, recorded in `memory/camera-input.md`
+  + `memory/engine.md`); collision wired from `Scene.objectBounds()` + closed-door AABBs through
+  `Collision.resolve`; a `beam.js` reflecting ray-march **reusing** `scene.intersect` + `material.reflect`
+  + the `maxDepth` cap (no reimplementation); save = versioned `localStorage` `mirror-forge:save`
+  `{ version, currentRoom, collected[], switches{}, doors{}, settings }` with `restart()` reset.
+  Execution order P1 → P2 → P3 → P4; P1 ready now. The concrete P3 rule lives in
+  `roads/PLAN-07/P3-reflective-puzzle.md`. Marked PLAN-06 complete + added the PLAN-07 table in
+  `tasks/README.md`; refreshed `roads/README.md`. Flagged the puzzle-mechanic + save-schema confirms
+  in Open questions.
+- Roads `roads/PLAN-06/E1-game-loop.md`, `E2-entity-system.md`, `E3-managers.md`,
+- Roads `roads/PLAN-06/E1-game-loop.md`, `E2-entity-system.md`, `E3-managers.md`,
+  `E4-events-collision.md` (Status: DONE + superseded by `memory/engine.md`) — Worker pass, executed
+  in order per `STATE.md` → Next. Built `src/engine/`: `Loop.js` (rAF loop, dt clamped to 0.1s,
+  `update(dt)` → `render()` → timing snapshot `{ dt, elapsed, frame, fps }`); `Entity.js` + `World.js`
+  (lightweight entity + component-bag, `create/remove/query/each`); `SceneManager.js` (opaque scene
+  registry by key); `InputManager.js` (owns raw DOM listeners + Pointer Lock on an injected target;
+  `poll()` returns the exact `{ forward, backward, left, right, mouseDeltaX, mouseDeltaY,
+  pointerLocked, fovDelta }` snapshot pinned in `memory/camera-input.md`, poll-and-clear deltas);
+  `AssetManager.js` (async JSON cache, `load`/`get`); `EventBus.js` (sync `on/off/emit`);
+  `Collision.js` (`resolve(position, desiredMove, radius, colliders) → newPosition` — sphere-vs-AABB
+  positional correction: attempt the full move, then push out along the contact normal by the
+  penetration depth per colliding AABB, which stops head-on motion at the surface while leaving
+  tangential motion untouched, i.e. slide). `src/engine/index.js` barrel exports all eight symbols.
+  Scratch-assert verification passed for all four Roads: Loop (stubbed rAF/`performance.now` — dt
+  clamp on a simulated 5s stall, update→render call order, timing snapshot advancing); Entity/World
+  (unique ids, add/get/has/remove round-trip, query/each membership, entity removal); managers
+  (SceneManager swap; AssetManager second `load()` for the same key does not refetch; InputManager
+  with a stubbed `EventTarget` — held-key state, mouse deltas ignored until pointer-locked then
+  accumulating and clearing on `poll()`, wheel → `fovDelta` accumulate+clear); **end-to-end check**:
+  `InputManager.poll()` fed directly into the existing `Controls.update(camera, input, dt)`
+  (PLAN-05/C2) moved the camera forward on a simulated W keypress — confirms the real-input loop is
+  closed; EventBus (`on`/`off`/`emit` to multiple handlers, unknown-type no-op); Collision.resolve
+  (hand-computed head-on stop exactly at the box surface with no penetration, free-space move
+  unaffected, a glancing case preserving the tangential component while still not penetrating).
+  `memory/engine.md` updated with a "Landed" section recording the shipped shapes.
+  **PLAN-06 (Engine Runtime) now complete** — unblocks PLAN-07 (Gameplay), which is next per the
+  dependency graph in `memory/architecture.md`.
+- Phase F (Leader): generated PLAN-06 Tasks + Roads (E1 game loop & timing, E2 entity system, E3
+  managers [scene / input / asset], E4 events & collision) in `akrs/tasks/PLAN-06/` +
+  `akrs/roads/PLAN-06/`. Recorded PLAN-06 decisions in `memory/engine.md`: `src/engine/` imports
+  **only** `src/math/` (scenes / assets / colliders arrive as injected / duck-typed refs — no
+  geometry import; DOM allowed only in the input manager); `Loop({ update, render })` with variable
+  dt **clamped** + a timing snapshot `{ dt, elapsed, frame, fps }`; **lightweight** entity +
+  component-bag `World` (not full ECS); `InputManager.poll()` returns the exact
+  `{ forward, backward, left, right, mouseDeltaX, mouseDeltaY, pointerLocked, fovDelta }` snapshot
+  pinned in `memory/camera-input.md` (poll-and-clear deltas); `SceneManager` holds opaque scene
+  handles by key; `AssetManager` = thin async JSON cache (level schema owned by gameplay); `EventBus`
+  synchronous `on / off / emit`; collision = **sphere-vs-AABB slide** reusing PLAN-01/M4 bounds, with
+  colliders fed from `Scene.objectBounds()` (PLAN-02/G4). Execution order E1 → E2 → E3 → E4; E1 ready
+  now. Flagged the collision-proxy + asset-format assumptions in Open questions. Marked PLAN-04 /
+  PLAN-05 complete and added the PLAN-06 table in `tasks/README.md`; refreshed `roads/README.md`.
 - Road `roads/PLAN-05/C2-controls.md` (Status: DONE + superseded by memory/camera-input.md): built
   `src/camera/Controls.js` — `update(camera, input, dt)` reads a normalized, polled input snapshot
   (no DOM/pointer-lock listeners; the engine input manager owns raw events). Mouse look (yaw/pitch
@@ -263,17 +343,19 @@ Updated: 2026-07-01T14:00Z by claude-code (Worker / Sonnet 5)
 - Phase B: generated PLAN-01 Tasks + Roads (M1–M4) in `akrs/tasks/` + `akrs/roads/`; recorded Matrix4 storage + quaternion-consistency decisions in `memory/math.md`.
 
 ## Next
-- **PLAN-04 (R1–R4) and PLAN-05 (C1–C2) are both complete** — a reference scene renders
-  reflections + shadows through `Renderer.render(camera, scene)`, and `Controls.update(camera,
-  input, dt)` drives that camera from a normalized input snapshot. Pixel-sample regression tests
-  deferred to PLAN-10 per `plans/PLAN-04-ray-tracer.md`.
-- Confirm the ambient-coefficient numeric default (see Open questions) before building a reference
-  scene for real content.
-- `Controls` cannot be exercised end-to-end in a real browser until PLAN-06/E3 (input manager)
-  lands and supplies the `{ forward, backward, left, right, mouseDeltaX, mouseDeltaY,
-  pointerLocked, fovDelta }` shape recorded in `memory/camera-input.md`.
-- No Road is currently ACTIVE; next work needs a Leader planning pass (Mode 3/4) to pick the next
-  Plan (PLAN-06 engine runtime is the natural next step — it unblocks real controls + collision).
+- **PLAN-07 is done. Start PLAN-08 (UI)** (Leader planning pass first — no PLAN-08 Tasks/Roads exist
+  yet): main-menu "continue" reads `save.load()`; settings own the opaque `settings` blob persisted
+  by `snapshot()`/`save()`; FPS counter reads `Loop`'s `timing` snapshot.
+- The **live browser boot** (assemble `Loop` + `Renderer.render(camera, scene)` + `InputManager` +
+  `src/game/` `RoomManager`/`Puzzle`/etc. into `src/main.js`, wired to a real `<canvas>`) is still
+  unbuilt — likely folded into PLAN-08 or its own step; confirm with the user which Plan owns it.
+- Note: PLAN-07 modules are verified via scratch-assert (synthetic input/positions, stubbed
+  `localStorage`), the project's established pattern — no DOM/browser needed. Formal automated tests
+  are deferred to PLAN-10 across the whole project.
+- Still-open confirms (don't block PLAN-08 planning): the player collision radius (caller-supplied to
+  `Collision.resolve`, gameplay never picked a concrete default), the level-JSON schema (`AssetManager`
+  is format-agnostic), and the ambient-coefficient default (PLAN-04, needed before a reference scene
+  ships). See Open questions.
 
 ## Open questions
 - **Coordinate convention** — assume right-handed, +Y up, camera looks −Z? (owner: `memory/conventions.md`; assumption, confirm)
@@ -285,3 +367,20 @@ Updated: 2026-07-01T14:00Z by claude-code (Worker / Sonnet 5)
 - **Ambient coefficient numeric default** — `materials.shade()` reads `scene.ambient`, falling
   back to 0 (neutral) when unset; no scene currently sets a non-zero default. (owner:
   `memory/conventions.md`; confirm the intended default before a reference scene ships.)
+- **Player collision proxy** — E4 shipped `Collision.resolve` with a **caller-supplied radius** (no
+  engine default). Confirm the gameplay player radius (~0.3 m sphere) when P2 wires collision. (owner:
+  `memory/gameplay.md`; assumption, confirm during P2)
+- **Asset / level file format** — assume **JSON** level descriptors, with the schema owned by
+  [[gameplay]] (PLAN-07)? `AssetManager` is format-agnostic (async cache); only the schema is
+  deferred. (owner: `memory/engine.md` → [[gameplay]]; assumption, confirm)
+- **Reflective puzzle mechanic (P3)** — landed as assumed: a switch-toggled movable mirror routes a
+  reflecting beam onto a receiver → `LEVEL_WON` (`src/game/beam.js` + `Puzzle.js`, reusing
+  `scene.intersect` + `material.reflect` + `maxDepth`). Confirm the *numeric layout* of a real level
+  (emitter/mirror/receiver placement) is still Unknown — only the mechanic is settled.
+- **`interact` input edge** — landed: `InputManager.poll()` returns an additive `interact` field
+  (`KeyE`, edge-detected, poll-and-clear); `Controls` + existing fields unchanged. Recorded in
+  `memory/camera-input.md` + `memory/engine.md`.
+- **Mirror-orientation implementation** — `Puzzle` swaps the mirror's own geometry `normal` in place
+  (not a `Node` rotation, since geometry `intersect()` ignores `Node` transforms). A Worker-level
+  choice the Road left open; confirm it's the intended long-term approach before PLAN-09 (BVH) or any
+  future Node-transform-aware intersection change lands, since that would change this contract.
