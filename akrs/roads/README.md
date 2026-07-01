@@ -1,9 +1,13 @@
 # Roads — generated on demand (Phase B / Mode 3)
-No Roads exist yet. A Road is the **execution contract** for one Task and is created **only when
-that work is requested** — never in advance. Exactly **one Road per Task**; the Leader chooses
-it, the Worker follows it.
+A Road is the **execution contract** for one Task and is created **only when that work is
+requested** — never in advance. Exactly **one Road per Task**; the Leader chooses it, the Worker
+follows it. PLAN-01/02 Roads have landed; PLAN-03 (S1–S3) is generated and queued.
 
-Naming: `roads/<PLAN>-<PHASE>-<slug>.md`, e.g. `roads/PLAN-01-M1-vector3-ray.md`.
+Naming:
+- PLAN-01/02 (legacy, flat): `roads/<PLAN>-<PHASE>-<slug>.md`, e.g. `roads/PLAN-01-M1-vectors-ray.md`.
+- **PLAN-03 onward (per-plan folder):** `roads/<PLAN>/<PHASE>-<slug>.md`, e.g. `roads/PLAN-03/S1-material-model.md`.
+  Roads in a subfolder reference sibling `akrs/` dirs with `../../` (e.g. `../../memory/materials.md`);
+  `src/…` paths stay repo-root-relative. Tasks mirror the same folder layout under `tasks/`.
 
 ## Road template (fill at generation time)
 ```markdown

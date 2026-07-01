@@ -6,11 +6,12 @@ Consumes [[geometry]], [[materials]], [[camera-input]], [[math]]; tuned by [[per
 ```
 camera → primary ray (per pixel, + AA sub-samples)
   → closest hit (scene.intersect)
-  → local shade (diffuse + specular + ambient)   [materials]
-  → shadow ray per point light (hard shadows)
-  → reflection ray if mirror/metallic (recurse, depth-limited)
+  → local shade (diffuse + specular + ambient + hard shadow ray per light)   [materials.shade()]
+  → reflection ray if mirror/metallic (tracer recurses, depth-limited; material supplies ray+weight)
   → accumulate → clamp → gamma → write ImageData (RGBA8)
 ```
+- Hard shadows live **inside** `materials.shade()` (it receives `scene`); the tracer owns the
+  primary/reflection rays, recursion + depth limit, AA, clamp, and gamma. — **Decided (PLAN-03)**.
 
 ## Parameters (owners)
 - Max reflection depth, AA sampling, gamma, ambient, color clamp → owned by [[conventions]] (render budgets). Renderer reads them; does not redefine them.

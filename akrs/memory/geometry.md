@@ -19,6 +19,10 @@ The ray-tracer depends only on this shape — primitives are interchangeable beh
 - World matrices computed by traversal; cache + dirty-flag. — **Assumption (Med)**.
 - **Scene**: flat list of renderables + lights for the tracer; built from the graph each frame or on change.
   - Lights = point-light descriptors `{ position: Vector3, color: Vector3, intensity: number }`; a formal `PointLight` type is deferred to the renderer (PLAN-04). — **Assumption (Med)**.
+  - `Scene.intersect(ray, tMin = 1e-4, tMax = Infinity) → Hit | null`: closest-hit linear scan over
+    `renderables` (each node's `geometry.intersect`). Added in PLAN-03/S2 — `materials.shade()`'s
+    shadow rays and the future tracer's primary/reflection rays both go through this. No
+    acceleration structure yet (PLAN-09 hook is `objectBounds()`/`bounds()`). — **Decided (PLAN-03)**.
 - Per-object **AABB** (world space) exposed for the acceleration structure ([[performance]]); `Scene.bounds()` = union of object AABBs.
 
 ## Decisions / open

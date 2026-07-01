@@ -135,4 +135,8 @@ Proprietary. All rights reserved.
 
 For questions or contributions, review the AKRS framework in the KERNEL and consult the active Road before beginning work.
 # weekly usage : 
-78%  - > 
+-78%  - > .... plan 2 -done 81%  ,
+-plan 2 -> worker usage : 9% with sonnet-5 , and about 1% weekly.
+-plan 3 : leader  : 8% context window , 19% - 9% = 10% usage with opus4.8 Extra thinking , about 1% weekly usage .
+   worker: all three tasks in same session : 101.9k/967k (11%) context window , sonnet-5 med, 
+   26

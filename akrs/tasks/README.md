@@ -3,6 +3,10 @@ A **Task** = one executable objective ("what to build"), small enough that a Wor
 without redesigning architecture. Each Task has **exactly one Road** ("what to read/change").
 Tasks are generated on demand (Mode 3). References, never duplicated knowledge.
 
+> **Layout:** PLAN-01/02 Tasks are flat (`tasks/PLAN-0x-…`). From **PLAN-03 onward** each plan's
+> Tasks live in a per-plan **subfolder** (`tasks/PLAN-03/…`) for clarity; Roads mirror this
+> (`roads/PLAN-03/…`).
+
 ## PLAN-01 — Math Core ✅ complete
 | Task | Phase | Road | Status |
 |---|---|---|---|
@@ -18,5 +22,13 @@ Shipped: `src/math/` Vector2, Vector3, Ray, Matrix4, Quaternion, AABB, BoundingS
 | [primitives](PLAN-02-G1-primitives.md) | G1 | `../roads/PLAN-02-G1-primitives.md` | ACTIVE (current) |
 | [mesh](PLAN-02-G2-mesh.md) | G2 | `../roads/PLAN-02-G2-mesh.md` | ACTIVE (queued, needs G1) |
 | [scene-graph](PLAN-02-G3-scene-graph.md) | G3 | `../roads/PLAN-02-G3-scene-graph.md` | ACTIVE (queued, needs G2) |
-| [bounds-wiring](PLAN-02-G4-bounds-wiring.md) | G4 | `../roads/PLAN-02-G4-bounds-wiring.md` | ACTIVE (queued, needs G3) |
+| [bounds-wiring](PLAN-02-G4-bounds-wiring.md) | G4 | `../roads/PLAN-02-G4-bounds-wiring.md` | DONE + superseded by memory/geometry.md |
 Execution order: G1 → G2 → G3 → G4. Close out each Road when its work lands (see `../roads/README.md`).
+
+## PLAN-03 — Materials & Shading (generated; S1 active, S2–S3 queued) — folder [PLAN-03/](PLAN-03/)
+| Task | Phase | Road | Status |
+|---|---|---|---|
+| [material-model](PLAN-03/S1-material-model.md) | S1 | `../roads/PLAN-03/S1-material-model.md` | ACTIVE (current) |
+| [local-shading](PLAN-03/S2-local-shading.md) | S2 | `../roads/PLAN-03/S2-local-shading.md` | ACTIVE (queued, needs S1) |
+| [reflection](PLAN-03/S3-reflection.md) | S3 | `../roads/PLAN-03/S3-reflection.md` | ACTIVE (queued, needs S2) |
+Execution order: S1 → S2 → S3. Owner: `src/materials/` → `memory/materials.md`.

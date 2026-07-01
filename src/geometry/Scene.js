@@ -33,6 +33,23 @@ export class Scene {
     }
   }
 
+  // Closest-hit scan across every renderable's geometry — the tracer's
+  // primary-ray query and materials.shade()'s shadow-ray query both go
+  // through here. No acceleration structure yet (PLAN-09 hook is
+  // objectBounds()/bounds() below); this is a linear scan.
+  intersect(ray, tMin = 1e-4, tMax = Infinity) {
+    let closest = null;
+    let closestT = tMax;
+    for (const node of this.renderables) {
+      const hit = node.geometry.intersect(ray, tMin, closestT);
+      if (hit) {
+        closest = hit;
+        closestT = hit.t;
+      }
+    }
+    return closest;
+  }
+
   // Stable per-object world-AABB accessor — the hook PLAN-09's BVH builds on.
   // Renderables with no finite local bounds (e.g. an infinite Plane) are
   // omitted: a BVH has nothing spatial to index them by.

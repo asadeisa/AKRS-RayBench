@@ -1,10 +1,64 @@
 # STATE
-Updated: 2026-07-01T04:15Z by claude-code (Worker / Sonnet 5)
+Updated: 2026-07-01T00:00Z by claude-code (Worker / Sonnet 5)
 
 ## Active
-- PLAN-02 (Geometry & Scene) complete — G1–G4 all landed. Awaiting next Leader-assigned Plan.
+- **PLAN-03 (Materials & Shading) complete** (S1–S3 landed). Handing back to Leader for PLAN-04
+  (ray tracer), which consumes the `shade()`/`reflect()` contract shipped here.
 
 ## Done
+- Road `roads/PLAN-03/S3-reflection.md` (Status: DONE + superseded by memory/materials.md): added
+  `reflect(hit, ray) → { ray: Ray, weight: Vector3 } | null` to the material types. `Material`
+  base default returns `null` (`Diffuse`/`Emissive` inherit it unchanged — no edits needed to
+  those two files); `Mirror`/`Metallic` override it with perfect reflection (`ray.dir.reflect
+  (hit.normal)`, normalized, origin epsilon-offset along the normal via the same epsilon as the
+  shadow-ray decision). Weight: `Mirror` = `Vector3(1,1,1).scale(reflectivity)` (grey),
+  `Metallic` = `albedo.scale(reflectivity)` (tinted). Roughness jitter deferred to PLAN-09 per
+  `memory/materials.md`. New `src/materials/shading.js` export: `reflectRay(hit, ray)` (shared
+  direction+origin logic for both types). No recursion/depth-limit/accumulation — PLAN-04 owns
+  that. Scratch-assert verification passed: hand-computed reflection direction for a straight-on
+  ray matched for both Mirror and Metallic, both returned unit-length directions with origins
+  offset along the normal, Mirror weight equaled grey `reflectivity`, Metallic weight equaled
+  `albedo × reflectivity` component-wise, and Diffuse/Emissive both returned `null`.
+  `memory/materials.md` contract unchanged — implementation matches as shipped.
+- Road `roads/PLAN-03/S2-local-shading.md` (Status: DONE + superseded by memory/materials.md):
+  added `shade(hit, ray, scene, lights) → Vector3` to the S1 types — `Material` base default is
+  ambient-only (`Mirror` inherits it unchanged, per spec: its look comes from S3 reflection);
+  `Diffuse`/`Metallic` = Lambert diffuse + Blinn-Phong specular (shininess derived from
+  `roughness`) + ambient tinted by albedo, with one hard shadow ray per point light
+  (epsilon-offset along the normal, skips occluded lights); `Emissive` returns
+  `emission.scale(intensity)`, ignoring scene/lights. New `src/materials/shading.js`: `mulColor`
+  (component-wise, not a Vector3 method — PLAN-01 math stays closed), `shadeOpaque` (shared
+  diffuse+specular+ambient+shadow logic for Diffuse/Metallic), `shadeAmbientOnly`,
+  `SHADOW_EPSILON`. **Scope exception (user-approved):** `memory/rendering.md`/`memory/geometry.md`
+  documented `Scene.intersect(ray) → Hit | null` as a contract the tracer relies on, but no
+  PLAN-02 Road had built it. Added it to `src/geometry/Scene.js` (linear closest-hit scan over
+  `renderables`) since S2's shadow rays need it — outside this Road's original `src/materials/`
+  scope, confirmed with the user first. Recorded in `memory/geometry.md`. Scratch-assert
+  verification passed: a front-lit diffuse sphere (light on the same side as the hit normal)
+  shaded above the hand-computed `ambient·albedo + albedo·NdotL` floor; the same light occluded by
+  a second sphere placed directly between hit point and light contributed exactly 0 (color equals
+  ambient·albedo only); `Emissive.shade()` returned `emission × intensity` independent of
+  scene/lights; `Mirror.shade()` returned ambient-only regardless of lights present; `Metallic`
+  showed the same lit-vs-occluded contrast using its own albedo. `memory/materials.md` updated:
+  ambient read as `scene.ambient` scalar (0 fallback, not invented) — still open pending
+  `conventions.md`'s fixed default; shininess-from-roughness formula recorded as an assumption.
+- Road `roads/PLAN-03/S1-material-model.md` (Status: DONE + superseded by memory/materials.md):
+  built `src/materials/Material.js` (base: `type` tag + shared `roughness`/`reflectivity`,
+  defaulted to 0), `Diffuse.js` (`albedo`: Vector3), `Mirror.js` (`reflectivity`), `Metallic.js`
+  (`albedo`, `reflectivity`, `roughness`), `Emissive.js` (`emission`: Vector3, `intensity`), and
+  `src/materials/index.js` barrel — data only, no `shade()`/`reflect?()`. Scratch-assert
+  verification passed: each type instantiates with correct `type` tag + params, all four are
+  `instanceof Material`, and a `Diffuse` material attached to a `Sphere` reads back unchanged
+  through `sphere.material`. `memory/materials.md` contract unchanged — implementation matches
+  as shipped.
+- Phase C (Leader): generated PLAN-03 Tasks + Roads (S1 material model, S2 local shading, S3
+  reflection) in the new per-plan **subfolders** `akrs/tasks/PLAN-03/` + `akrs/roads/PLAN-03/`.
+  Recorded three PLAN-03 decisions in Memory: color container = `Vector3` (0..1 linear, no Color
+  type) with a materials-local `mulColor` helper instead of extending closed PLAN-01 math
+  (`memory/materials.md`); `shade()` owns per-light hard-shadow occlusion and `reflect?()` returns
+  `{ ray, weight: Vector3 } | null` (`memory/materials.md`); reconciled the pipeline so shadows
+  live inside `materials.shade()` while the tracer owns recursion/AA/gamma (`memory/rendering.md`).
+  Updated `tasks/README.md` + `roads/README.md` to document the folder layout.
 - Road `roads/PLAN-02-G4-bounds-wiring.md` (Status: DONE + superseded by memory/geometry.md):
   added `Scene.objectBounds()` (stable `{ object, worldAABB }` list, per-renderable, built from
   `Node.worldBounds()`; entries with no finite local bounds — e.g. an infinite Plane — are
@@ -101,8 +155,8 @@ Updated: 2026-07-01T04:15Z by claude-code (Worker / Sonnet 5)
 - Phase B: generated PLAN-01 Tasks + Roads (M1–M4) in `akrs/tasks/` + `akrs/roads/`; recorded Matrix4 storage + quaternion-consistency decisions in `memory/math.md`.
 
 ## Next
-- PLAN-02 done. Next up per the plan index: PLAN-03 (materials & shading) — Mode 3 (Leader
-  generates Task + Road on demand) or dev-directed Mode 0/1 work.
+- **PLAN-03 done.** Leader to assign PLAN-04 (ray tracer): consumes `materials.shade()`/`reflect()`
+  and the new `Scene.intersect()` (added as a scope exception during S2 — see Done log).
 
 ## Open questions
 - **Coordinate convention** — assume right-handed, +Y up, camera looks −Z? (owner: `memory/conventions.md`; assumption, confirm)
