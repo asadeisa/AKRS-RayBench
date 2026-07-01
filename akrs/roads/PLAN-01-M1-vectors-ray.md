@@ -1,5 +1,5 @@
 # ROAD — vectors-ray
-Status: ACTIVE
+Status: DONE + superseded by memory/math.md
 Task: implement Vector2, Vector3, Ray per memory/math.md.
 Plan / Phase: PLAN-01 / M1
 

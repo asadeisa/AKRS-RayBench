@@ -18,7 +18,8 @@ The ray-tracer depends only on this shape — primitives are interchangeable beh
 - **Node**: local transform (Matrix4 from position/rotation/scale), children, optional geometry + material.
 - World matrices computed by traversal; cache + dirty-flag. — **Assumption (Med)**.
 - **Scene**: flat list of renderables + lights for the tracer; built from the graph each frame or on change.
-- Per-object **AABB** exposed for the acceleration structure ([[performance]]).
+  - Lights = point-light descriptors `{ position: Vector3, color: Vector3, intensity: number }`; a formal `PointLight` type is deferred to the renderer (PLAN-04). — **Assumption (Med)**.
+- Per-object **AABB** (world space) exposed for the acceleration structure ([[performance]]); `Scene.bounds()` = union of object AABBs.
 
 ## Decisions / open
 - Normals: outward, unit length; back-face handling for refraction is **out of scope** (no transmission in data.md).

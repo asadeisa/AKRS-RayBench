@@ -1,5 +1,5 @@
 # ROAD — quaternion
-Status: ACTIVE
+Status: DONE + superseded by memory/math.md
 Task: implement Quaternion per memory/math.md.
 Plan / Phase: PLAN-01 / M3   (needs M2 landed)
 

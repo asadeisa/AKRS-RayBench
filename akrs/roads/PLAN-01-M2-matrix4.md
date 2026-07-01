@@ -1,5 +1,5 @@
 # ROAD — matrix4
-Status: ACTIVE
+Status: DONE + superseded by memory/math.md
 Task: implement Matrix4 per memory/math.md (column-major).
 Plan / Phase: PLAN-01 / M2   (needs M1 landed)
 

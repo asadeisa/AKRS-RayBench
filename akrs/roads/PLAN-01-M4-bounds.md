@@ -1,5 +1,5 @@
 # ROAD — bounds
-Status: ACTIVE
+Status: DONE + superseded by memory/math.md
 Task: implement AABB + BoundingSphere per memory/math.md.
 Plan / Phase: PLAN-01 / M4   (needs M1 landed)
 

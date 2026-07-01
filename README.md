@@ -134,3 +134,5 @@ Proprietary. All rights reserved.
 ## Contact
 
 For questions or contributions, review the AKRS framework in the KERNEL and consult the active Road before beginning work.
+# weekly usage : 
+78%  - > 
