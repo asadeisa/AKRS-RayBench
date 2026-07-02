@@ -1,0 +1,6 @@
+- generic [ref=e8]:
+  - heading "Paused" [level=2] [ref=e9]
+  - button "Resume" [ref=e10] [cursor=pointer]
+  - button "Restart" [ref=e11] [cursor=pointer]
+  - button "Settings" [ref=e12] [cursor=pointer]
+  - button "Quit to Menu" [ref=e13] [cursor=pointer]

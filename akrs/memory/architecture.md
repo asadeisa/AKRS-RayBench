@@ -38,4 +38,15 @@ tests/              # PLAN-10  → memory/testing.md
   (architecture) decision, not a Worker decision.
 - Module boundaries = ES module files exporting plain classes/functions. No globals.
 
+## Verified (PLAN-10/Q3)
+- `tests/architecture.test.js` is a data-driven import-direction lint over the exact order above
+  (`math → geometry/materials/camera/engine → render → game → ui`; `perf` cross-cutting/exempt),
+  scanning every `src/<module>/**.js` file's cross-module `import`/`export … from` specifiers.
+  **Zero upward imports found** in the shipped tree — every module already respects the graph
+  (`game`/`ui`/`perf` consume everything below them via injected/duck-typed refs, never a static
+  import, exactly as each owning Memory already documented). `node tests/run.js` (72/72 green)
+  now gates this on every run, not just at Road-close-out time.
+- Each `src/*/index.js` barrel carries a header doc listing its exported symbols + one-line
+  contracts, pointing back to its owning `memory/*.md` — see each module's index.js.
+
 Related: [[conventions]] · [[math]] · [[rendering]] · [[engine]] · [[testing]]

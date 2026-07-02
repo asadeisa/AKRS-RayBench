@@ -1,158 +1,129 @@
-# Mirror Forge
+# Mirror Forge — an AKRS workflow test
 
-A browser-based first-person puzzle game rendered entirely using a custom CPU ray tracer.
+Mirror Forge is a browser-based first-person puzzle game with a hand-written CPU ray tracer,
+built entirely in vanilla JavaScript. But the game is not really the point of this repository.
 
-## Overview
+**This repo exists to answer one question: how far can [AKRS](https://github.com/asadeisa/akrs)
+be trusted as an autonomous development workflow?**
 
-Mirror Forge is an experimental exploration of real-time ray tracing in JavaScript, built from scratch without rendering libraries or game engines. The entire game—from 3D math to ray tracing to gameplay systems—is implemented in vanilla JavaScript using Canvas 2D for display.
+## What this repo actually is
 
-## Features
+This project was built to stress-test AKRS, not to hand-craft a game. The rule for this run was
+strict, on purpose:
 
-- **Custom Ray Tracer**: CPU-based recursive ray tracing with reflections, shadows, and shading
-- **Advanced Rendering**: Diffuse and specular lighting, ambient occlusion, gamma correction, anti-aliasing
-- **3D Math**: Full linear algebra suite (Vector2/3, Matrix4, Quaternion, Bounding volumes)
-- **Dynamic Geometry**: Spheres, planes, boxes, triangles, and mesh abstractions with scene graphs
-- **Materials System**: Diffuse, mirror, metallic, and emissive materials with configurable properties
-- **First-Person Gameplay**: WASD movement with mouse look, FOV adjustment, and near/far clipping
-- **Puzzle Mechanics**: Reflective puzzles, interactive switches, doors, and collectibles
-- **UI Suite**: Main menu, pause menu, FPS counter, debug overlay, and settings
-- **Performance Optimizations**: Progressive rendering, adaptive resolution, early ray termination, and spatial acceleration
+- The code was **not** written by hand and was **not** designed outside of AKRS. Every line came
+  out of the workflow: an **Opus, extra-high thinking** model acting as Leader (planning, Roads,
+  Memory), and a **Sonnet-5, medium-thinking** model acting as Worker (execution).
+- I, the developer, **did not read the generated code and did not edit it**. My only action was
+  clicking "run" / approving the next step. If the workflow was going to fail, it needed to fail
+  on its own — I wasn't there to catch it.
+- The entire point of the exercise is to see how far a documentation-driven, multi-agent workflow
+  can carry a real project **without a human in the loop reviewing output**.
 
-## Tech Stack
+If you're evaluating AKRS for your own use, this repo — plus the two critique reports below — is
+the evidence, not the pitch.
 
-- HTML5
-- CSS
-- Vanilla JavaScript (ES modules)
-- Canvas 2D API
-- No rendering libraries
-- No game engines
-- No physics libraries
+## The verdict, honestly
 
-## Getting Started
+AKRS **works** as a way to route a small amount of the right knowledge to a cheap model so it can
+execute correctly without scanning the repo. Over two days, one Leader pass plus a mid-tier Worker
+shipped a working math library, geometry kernel, material system, recursive ray tracer, camera,
+engine runtime, gameplay layer, UI, and performance pass — 10 plans, all closed out, with recorded
+weekly model usage under ~20% in the pro plan subscription .
 
-### Prerequisites
+It also has real, named weaknesses. The workflow currently defines "done" by paperwork agreement
+(Road ↔ Memory ↔ STATE), not by whether the feature is observable in the running product. That gap
+let dead code, an invisible win condition, and a 0.4 FPS "playable" game ship while every artifact
+in the workflow reported 100% complete. That is the core finding of this test, and it's the reason
+a new version of AKRS is already being planned instead of just patched around.
 
-A modern web browser with support for ES modules and Canvas 2D.
+## Read the critique (نقد) before you adopt this workflow
 
-### Running the Game
+Two independent evaluation passes were run against this repo by a separate model acting purely as
+an auditor (not as Leader or Worker), specifically to find what AKRS gets wrong, not just what it
+gets right. Both are kept **locally in this repo** (not pushed to git — see below) so anyone
+cloning this project can read the full, unfiltered critique:
 
-1. Clone the repository
-2. Open `index.html` in your web browser (or serve via a local HTTP server)
-3. Use **WASD** to move and your **mouse** to look around
-4. Solve the reflective puzzles to progress
+- **`WORKFLOW-EVALUATION.md`** — a full audit of the workflow artifacts themselves: the Kernel,
+  Router, Memory, Roads, Plans, and STATE. Scores what's strong (epistemic labeling in Memory,
+  Road-as-execution-contract, the scope-exception protocol) against what's broken (STATE.md bloat,
+  Task/Road duplication, no persistent verification, doctrine ignored under batching pressure).
+- **`WORKFLOW-EVALUATION-2-LIVE.md`** — what happened when the *finished* game was actually run in
+  a browser. All 72 tests green, all plans DONE, and the game still ran at ~0.4 FPS with an
+  invisible win state. This report names the single root cause behind every live defect: nothing
+  in AKRS is ever required to look at the running product instead of the paperwork.
 
-### Development
+**Why they aren't in git:** these are honest, sometimes harsh, internal critique documents written
+for the purpose of fixing the workflow — not marketing collateral for a game repo. They stay on
+disk locally for anyone working on the next AKRS version, but they aren't pushed to the public
+history. If you want the full findings, ask for them directly or check the
+[AKRS repo](https://github.com/asadeisa/akrs) for the version that incorporates the fixes.
 
-The project is organized into modular systems:
+## Where this goes next
 
-- **`akrs/memory/`** – Design decisions and architectural documentation
-- **`akrs/plans/`** – Implementation plans organized by subsystem
-- **`akrs/roads/`** – Active work tasks and execution plans
-- **`docs/data.md`** – Source of truth for project requirements
-- **`docs/akrs/framework/`** – Build-time framework documentation (not loaded at runtime)
+The weaknesses above are already scoped into a growth plan for the next AKRS version (see the
+[AKRS repo](https://github.com/asadeisa/akrs)):
 
-To contribute, review the active Road in `akrs/roads/` and follow the AKRS framework guidelines.
+1. **Trust but verify** — a "Mirror Check" at close-out that confirms each shipped feature is
+   reachable at runtime, not just exported; a mechanical lint instead of an honor system.
+2. **Team-ready** — STATE/LOG split so state stops growing unbounded, seam ownership so
+   deferred work can't quietly become invisible work, an expiry rule so open questions can't ship
+   silently as "non-blocking" forever.
+3. **Org-ready** — measurable acceptance lines in the source of truth, CI-published verification,
+   and a real cost/ROI number instead of usage figures buried in commit messages.
 
-## Project Structure
+The plan is to keep everything AKRS already gets right (single-owner knowledge, Kernel-as-compiled
+doctrine, Road-scoped execution, the close-out discipline) and stop relying on prompt discipline
+alone for the parts that determine whether the product actually works.
+
+## Tech stack (the game itself)
+
+- Vanilla JavaScript (ES modules), Canvas 2D — no rendering libraries, no game engine, no physics
+  library, no bundler.
+- Custom CPU ray tracer: recursive reflections, hard shadows, gamma-correct shading, jittered
+  anti-aliasing.
+- Full 3D math suite (Vector2/3, Matrix4, Quaternion, bounding volumes), scene graph, materials
+  system (diffuse/mirror/metallic/emissive), first-person camera and controls, entity/engine
+  runtime, reflective-beam puzzles, save/load, UI, and a performance pass (progressive
+  rendering, adaptive resolution, spatial acceleration).
+
+## Running it
+
+1. Clone the repository.
+2. Open `index.html` in a modern browser (or serve it via any static HTTP server).
+3. **WASD** to move, **mouse** to look, solve the reflective puzzles to win.
+
+## Project structure
 
 ```
 mirror-test/
 ├── index.html              # Game entry point
-├── src/                    # Source code (organized by subsystem)
-├── docs/                   # Documentation
-│   ├── data.md            # Requirements source of truth
-│   └── akrs/              # AKRS framework (build-time only)
-├── akrs/                  # AKRS runtime (memory, plans, roads, state)
-│   ├── KERNEL.md          # Project kernel and execution rules
-│   ├── ROUTER.md          # Route and reference guide
-│   ├── STATE.md           # Current project state
-│   ├── memory/            # Design decisions and ownership
-│   ├── plans/             # Implementation phases and plans
-│   ├── roads/             # Active work and tasks
-│   └── tasks/             # Detailed task specifications
-└── README.md              # This file
+├── src/                    # Generated source code, organized by subsystem
+├── tests/                  # Persisted verification tests
+├── docs/
+│   ├── data.md              # Source of truth for requirements
+│   └── akrs/                # AKRS framework docs (build-time only, never loaded at runtime)
+└── akrs/                    # AKRS runtime artifacts for this run
+    ├── KERNEL.md             # Compiled per-project operating rules
+    ├── ROUTER.md              # Domain → Plan/Memory routing
+    ├── STATE.md               # Session state / save point
+    ├── memory/                # Design decisions and architectural contracts
+    ├── plans/                 # Implementation phases
+    ├── roads/                 # Execution contracts (scope, acceptance, close-out)
+    └── tasks/                 # Task specifications paired with Roads
 ```
 
-## Architecture
+## How AKRS drove this build
 
-The game operates under the AKRS framework:
+- **Router** (`akrs/ROUTER.md`) maps a domain to the Plan and Memory that own it.
+- **Memory** (`akrs/memory/`) is the single-owner source of architectural decisions, each one
+  labeled Decided / Assumption (High/Med/Low) / Unknown.
+- **Roads** (`akrs/roads/`) are scoped execution contracts: exact files, boundaries, acceptance
+  criteria, close-out. The Worker never reads outside the assigned Road.
+- **STATE.md** is the save point read at the start of every session.
 
-- **Road**: Active work with clear scope and expected outputs
-- **Memory**: Design decisions, ownership, and architectural contracts
-- **Router**: Routes and references between components
-- **Repository**: Source files (only modified by active Roads)
-
-Core systems:
-
-- **Math Core**: Linear algebra, ray-geometry intersection
-- **Geometry & Scene**: Spatial data structures, scene graph
-- **Materials & Shading**: Material properties, lighting calculations
-- **Ray Tracer**: Main rendering pipeline with recursive reflections
-- **Camera & Input**: First-person controller with mouse/keyboard input
-- **Engine Runtime**: Game loop, entity system, scene management
-- **Gameplay**: Puzzle mechanics, interactions, save/load
-- **UI**: Menus, overlays, and debugging displays
-- **Performance**: Optimization strategies and profiling
-
-## Building
-
-The project uses build-time documentation in `docs/akrs/framework/`. The runtime never loads framework documentation—it operates on active Roads and architectural Memory.
-
-To extend or debug:
-
-1. Check the active Road in `akrs/roads/`
-2. Review relevant Memory in `akrs/memory/` for design context
-3. Trace the Router in `akrs/ROUTER.md` for component relationships
-4. Execute only within the scope of the active Road
-
-## Performance Notes
-
-- Progressive rendering allows frame budgeting
-- Adaptive resolution scales rendering quality based on performance
-- Early ray termination prevents excessive recursion
-- Spatial acceleration structures speed up ray-geometry intersection
-- Frame timing is monitored and reported via the debug overlay
-
-## Future Enhancements
-
-See `akrs/plans/` for planned implementations:
-- PLAN-01: Math core and ray-geometry intersection
-- PLAN-02: Geometry and scene management
-- PLAN-03: Materials and shading
-- PLAN-04: Ray tracer pipeline
-- PLAN-05: Camera and input handling
-- PLAN-06: Engine runtime and game loop
-- PLAN-07: Gameplay and puzzle mechanics
-- PLAN-08: UI and menus
-- PLAN-09: Performance optimization
-- PLAN-10: Quality assurance and polish
+None of this was reviewed by hand during the build — see "What this repo actually is" above.
 
 ## License
 
 Proprietary. All rights reserved.
-
-## Contact
-
-For questions or contributions, review the AKRS framework in the KERNEL and consult the active Road before beginning work.
-# weekly usage : 
--78%  - > .... plan 2 -done 81%  ,
--plan 2 -> worker usage : 9% with sonnet-5 , and about 1% weekly.
-------------------
--plan 3 : leader  : 8% context window , 19% - 9% = 10% usage with opus4.8 Extra thinking , about 1% weekly usage .
-   worker: all three tasks in same session : 101.9k/967k (11%) context window , sonnet-5 med, 
-   26 % - 19% = 7% usage  about 1% weekly usage.
------------------
-plan 4 : planing leader : 12%- 8% = 4% context window as extra on what it has  ,37% - 26% =11% usage , 84%-83% = 1% weekly   , i use the same session of planing for the plan 3
-   worker : same session of the worker in plane 5 first task . 45-40% = 5% usage ,89 - 88% =1%weekly  , 14-8 = 6% context window.
--------------------
-plan 5 : (plan 4 , rely on task in plan 5 , so i had to create it first ) : 
-    planing leader : i have to use same session of planing for 3-4 , context window : 13% - 12% = 1% extra , usage 41% - 37% = 4% usage , 85% - 84% = 1% weekly usage.
-     worker : first task is required before starting with plan 4 (i start new session),
-     40 -37%  = 3% usage  ,88% -88%  weekly    , 8% context window 
-     task-2 :48% -45% = 3%usage ,89% -89% weekly ,17 -14% = 3% extra context window
------
-plane 6 : (new session )
-   leader :   -48% usage , -89% weekly , 
- ----
- worker in tasks 7 goal : ✔ Goal achieved (29m · 1 turn · 50.4k tokens)
- ----

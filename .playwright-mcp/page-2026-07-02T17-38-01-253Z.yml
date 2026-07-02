@@ -1,0 +1,31 @@
+- generic [ref=e14]:
+  - heading "Settings" [level=2] [ref=e15]
+  - generic [ref=e16]:
+    - generic [ref=e17]:
+      - text: Field of view
+      - status "Field of view °" [ref=e18]: "60"
+      - text: °
+    - slider [ref=e19]: "60"
+  - generic [ref=e20]:
+    - generic [ref=e21]: AA samples
+    - spinbutton "AA samples" [ref=e22]: "4"
+  - generic [ref=e23]:
+    - generic [ref=e24]: Reflection depth
+    - spinbutton "Reflection depth" [ref=e25]: "4"
+  - generic [ref=e26]:
+    - generic [ref=e27]:
+      - text: Mouse sensitivity
+      - status "Mouse sensitivity" [ref=e28]: "0.0022"
+    - slider [ref=e29]: "0.002"
+  - generic [ref=e30]:
+    - generic [ref=e31]: Invert Y
+    - checkbox "Invert Y" [ref=e32]
+  - generic [ref=e33]:
+    - generic [ref=e34]:
+      - text: Resolution scale
+      - status "Resolution scale" [ref=e35]: "1.00"
+    - slider [ref=e36]: "1"
+  - generic [ref=e37]:
+    - generic [ref=e38]: Adaptive resolution
+    - checkbox "Adaptive resolution" [ref=e39]
+  - button "Close" [ref=e40] [cursor=pointer]

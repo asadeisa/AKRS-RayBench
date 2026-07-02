@@ -1,7 +1,17 @@
 # STATE
-Updated: 2026-07-02T00:00Z by claude-code (Worker / Sonnet 5)
+Updated: 2026-07-02T00:30Z by claude-code (Worker)
 
 ## Active
+- **All 10 plans are now complete.** PLAN-10/Q3 (the last Road of the last plan) landed — see Done
+  below. There is no further Active work queued; the next step is a Leader pass (Mode 4/close-out)
+  if new scope is opened, or resolving the remaining non-blocking Open questions below.
+- **Phase J (Leader): PLAN-10 Tasks + Roads generated** — the last plan. `tasks/PLAN-10/` +
+  `roads/PLAN-10/` held Q1 (zero-dep harness + core unit tests: math/geometry/materials), Q2
+  (renderer pixel-hash regression + BVH-vs-linear/early-term/scale checks + engine/save smoke), Q3
+  (import-direction lint + module entry-contract docs + conventions style) — **all three now DONE**.
+  Harness **Decided** (zero-dep Node/browser runner, `node tests/run.js`, no deps/bundler) — recorded
+  in `memory/testing.md`, resolving the STATE open question. Indexes refreshed (`tasks/README.md`,
+  `roads/README.md`).
 - **PLAN-01 … PLAN-09 are all complete. PLAN-08 (U1–U3) is now fully live-verified in a browser** —
   Playwright, served over a local static HTTP server (no bundler, per `memory/conventions.md`):
   menu → New Game → PLAYING (renders, `F3` overlay) → pause (reachable from both menus) → Settings
@@ -13,6 +23,60 @@ Updated: 2026-07-02T00:00Z by claude-code (Worker / Sonnet 5)
   point light, intensity 18, ambient 0) — never live-verified before now. See Open questions.
 
 ## Done
+- **PLAN-10/Q3 (modularity & docs pass) executed — PLAN-10 complete, all 10 plans done** (Worker
+  pass, per `STATE.md` → Next: Q3). Built `tests/architecture.test.js`: a data-driven import-direction
+  lint over the `memory/architecture.md` dependency order (`math → geometry/materials/camera/engine →
+  render → game → ui`; `perf` cross-cutting/exempt) — scans every `src/<module>/**.js` file's
+  cross-module `import`/re-export specifiers via `node:fs`/`node:path` (no new dependency) and asserts
+  none points upward; includes a small unit check of the `isUpwardImport` rule itself (synthetic
+  violation + synthetic allowed case) alongside the real full-tree scan. **Zero upward imports found**
+  — every module already honored the graph via injected/duck-typed refs (`game`/`ui`/`perf` never
+  statically import what they consume), so **no `src/` boundary changes were needed**. Added an
+  entry-contract header doc (exported symbols + one-line contracts, pointing to the owning
+  `memory/*.md`) to all nine `src/*/index.js` barrels (`math`, `geometry`, `materials`, `camera`,
+  `engine`, `render`, `game`, `ui`, `perf`) — docs-only, no export/behavior changes. Scanned for
+  `var` usage and non-`SCREAMING_SNAKE` top-level constants per `memory/conventions.md`: **no
+  violations found**, tree was already consistent — no style edits made. `tests/run.js` extended to
+  import the new suite (Q1+Q2 suites untouched). `node tests/run.js` → **72/72 green, exits 0**.
+  `memory/testing.md` + `memory/architecture.md` updated with "Landed"/"Verified" sections. Set
+  `roads/PLAN-10/Q3-modularity-docs.md` `DONE + superseded by memory/testing.md`.
+  **PLAN-10 (Q1+Q2+Q3) is now complete — this closes the last plan; all 10 plans (PLAN-01 … PLAN-10)
+  are done.**
+- **PLAN-10/Q2 (renderer & gameplay regression) executed** (Worker pass, per `STATE.md` → Next: Q2).
+  Built `tests/render.test.js` (fixed tiny scene — one red `Diffuse` sphere + one point light,
+  `samples: 1` — through the real `Renderer.render(camera, scene)`; hand-written FNV-1a hash of the
+  RGBA buffer asserted against a committed `GOLDEN_HASH`; lit-vs-background pixel contrast; alpha 255
+  throughout; byte-identical repeat render). `tests/perf.test.js`: **BVH-vs-linear equality**
+  automated (10-sphere scene, fixed deterministic ray grid, `t` + hit-object identity compared with
+  `BVH` set vs. unset, plus inside-sphere + `setAccelerator(null)` round-trip cases); **early
+  termination** automated (two-facing-`Mirror`-`Plane` fixture — weak reflectivity 0.02 barely
+  changes `maxDepth 2→20`, strong 0.95 keeps accumulating meaningfully); `Renderer.setScale`
+  byte-identical/halving checks; `AdaptiveController` step/clamp/`enabled=false` checks;
+  `FrameBudget` sliding-window average checks. `tests/engine.test.js`: `Loop` via a stubbed
+  `requestAnimationFrame`/`performance.now()` (dt clamp on a simulated 5s stall, update-before-render
+  ordering, `stop()` cancels); `EventBus` on/off/emit. `tests/gameplay.test.js`: `save`/`load`
+  round-trip + null-not-throw (no save / corrupt JSON / version mismatch) through a stubbed in-memory
+  `localStorage`; `clear()`; `restart()` reset via stub gameplay objects. Extended `tests/run.js` to
+  import all four. **No `src/` changes** — Q2 builds guards only, per its own boundary; no new bug
+  surfaced beyond the already-recorded blown-out reference level. Verified (then reverted) that
+  corrupting `GOLDEN_HASH` fails the suite and exits 1, confirming the pixel-hash test is a real
+  guard. `node tests/run.js` → **69/69 green, exits 0**. `memory/testing.md` updated with a "Landed"
+  (Q2) section. Set `roads/PLAN-10/Q2-regression.md` `DONE + superseded by memory/testing.md`.
+  **PLAN-10/Q2 now complete — unblocks Q3.**
+- **PLAN-10/Q1 (test harness + core unit tests) executed** (Worker pass, per `STATE.md` → Next:
+  Q1 ready now). Built `tests/harness.js` (`test`/`assert`/`assertEqual`/`assertClose`/`assertThrows`/
+  `run()`, zero-dep, ES modules) + `tests/run.js` (imports every `*.test.js`, `process.exit(fails ? 1
+  : 0)`). Built `tests/math.test.js` (Vector2/Vector3/Ray/Matrix4/Quaternion, 21 tests),
+  `tests/geometry.test.js` (Sphere/Plane/Box/Triangle/Mesh/Scene.intersect, 14 tests),
+  `tests/materials.test.js` (Mirror/Metallic reflect, Diffuse/Emissive reflect()===null, Emissive/
+  Mirror shade(), 8 tests) — all asserting hand-computed values matching the M1–M4/G1–G4/S1–S3
+  scratch-assert passes already recorded above, no new contracts invented. Tests import the real
+  `src/` modules unchanged; no `src/` edits were needed. `node tests/run.js` → **43/43 green, exits
+  0**; verified (then reverted) that a deliberately wrong expected value fails a test and makes the
+  run exit 1, confirming the harness actually gates. `memory/testing.md` updated with a "Landed"
+  section recording the shipped harness API + suite counts. Set
+  `roads/PLAN-10/Q1-core-unit-tests.md` `DONE + superseded by memory/testing.md`.
+  **PLAN-10/Q1 now complete — unblocks Q2.**
 - **PLAN-08/U3 (settings) executed and live-verified with Playwright** (Worker pass). Built
   `src/ui/Settings.js` (FOV/AA-samples/reflection-depth/mouse-sensitivity/invert-Y/resolution-scale +
   an adaptive-resolution toggle; reads initial values off live `camera`/`renderer`/`controls`/
@@ -467,11 +531,14 @@ Updated: 2026-07-02T00:00Z by claude-code (Worker / Sonnet 5)
 - Phase B: generated PLAN-01 Tasks + Roads (M1–M4) in `akrs/tasks/` + `akrs/roads/`; recorded Matrix4 storage + quaternion-consistency decisions in `memory/math.md`.
 
 ## Next
-- **PLAN-01 … PLAN-09 complete; U1–U3 live-verified. Only PLAN-10 (regression/testing) remains.**
-  Decide the unit-test framework (Open questions) and build a formal regression suite covering: BVH
-  vs. linear-scan equality, early-termination epsilon bound, adaptive-resolution scale math + the
-  canvas-upscale blit, and the settings persist/apply round-trip — all currently covered only by
-  scratch-assert + one manual Playwright pass, not an automated suite.
+- **No queued Worker work.** All 10 plans (PLAN-01 … PLAN-10) are complete; `node tests/run.js` is
+  green (72/72) and gates math/geometry/materials, renderer pixel-hash + BVH/early-term/scale
+  regression, engine/save smoke, and the import-direction architecture lint. Remaining items are the
+  non-blocking Open questions below (mostly numeric-default confirmations) — a Leader call, not a
+  Worker task, unless the user opens new scope.
+- Harness question is **Decided** (zero-dep runner). The formal regression suite (BVH-vs-linear
+  equality, early-term epsilon, scale math, save round-trip) that was only scratch-asserted + one
+  manual Playwright pass is now automated in `tests/perf.test.js`/`tests/gameplay.test.js` (Q2).
 - **Investigate the reference level's blown-out initial view** (surfaced during U3's live-verify pass,
   not fixed): the camera starts near a `intensity: 18` point light with `scene.ambient` unset (0
   fallback) — worth confirming whether this is the intended look or a level-tuning gap. Not blocking;
@@ -482,7 +549,8 @@ Updated: 2026-07-02T00:00Z by claude-code (Worker / Sonnet 5)
 ## Open questions
 - **Coordinate convention** — assume right-handed, +Y up, camera looks −Z? (owner: `memory/conventions.md`; assumption, confirm)
 - **World units** — assume meters? (assumption, confirm)
-- **Unit-test framework** — `data.md` requires unit tests but names none. Options: zero-dep in-browser harness / Vitest (dev-only dep). Decide before PLAN-10.
+- **Unit-test framework** — RESOLVED (2026-07-02): **zero-dep Node/browser harness** (`node tests/run.js`,
+  no deps/bundler), honoring the strict no-libraries rule. Recorded **Decided** in `memory/testing.md`.
 - **Build tooling** — assume none (serve ES modules directly via a static dev server, no bundler)? (assumption, confirm)
 - **Save storage** — assume browser `localStorage` with a versioned JSON schema? (owner: `memory/gameplay.md`; assumption, confirm)
 - **Framework removal** — `02-Generation §7` says strip `docs/akrs/framework/` from a shipped project. Kept here intentionally (it is this repo's versioned source and your confirmed Source of Truth). Confirm keep vs. move-before-ship.

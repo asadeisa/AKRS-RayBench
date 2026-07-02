@@ -7,7 +7,9 @@ relaunch → continue, all confirmed). PLAN-09's F1–F3 built an output-identic
 seam; U3 is the first Road to actually apply a non-1 render scale to pixels, with a canvas
 upscale-on-blit to match. One pre-existing, out-of-scope issue was surfaced (not fixed) during
 verification: the reference level's initial camera view is very bright — see `STATE.md` → Open
-questions. **Next: PLAN-10** (regression/testing), the only unstarted Plan.
+questions. **PLAN-10 Roads are now generated** (Q1 core unit tests, Q2 renderer/gameplay regression,
+Q3 modularity & docs) in `roads/PLAN-10/` — the harness is Decided (zero-dep `node tests/run.js`).
+**Next: execute Q1 -> Q2 -> Q3** (Q1 ready now); this is the last unstarted Plan.
 
 Naming:
 - PLAN-01/02 (legacy, flat): `roads/<PLAN>-<PHASE>-<slug>.md`, e.g. `roads/PLAN-01-M1-vectors-ray.md`.

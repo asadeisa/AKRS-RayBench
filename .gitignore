@@ -66,3 +66,7 @@ test-results/
 .turbo/
 dist-ssr/
 *.local
+
+# Internal workflow critique reports (kept locally, not pushed)
+WORKFLOW-EVALUATION.md
+WORKFLOW-EVALUATION-2-LIVE.md

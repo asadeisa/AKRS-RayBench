@@ -95,5 +95,17 @@ Continue restores and reapplies the saved settings.
 Execution order: F1 → F2 → F3 (all landed). Owner: `src/perf/` (+ hooks in `src/render/`, `src/geometry/Scene.js`, `src/main.js`) → `memory/performance.md`.
 ⭑ Shipped: `src/perf/` BVH + accelerator seam, `AdaptiveController` + `ProgressiveRefiner`, `FrameBudget`;
 `Renderer.setScale`; early ray termination in `traceRay`; boot times render()-only ms into
-`FrameBudget` → `AdaptiveController.update` (not yet applied to pixels — U3 wires that). **PLAN-09
+`FrameBudget` -> `AdaptiveController.update` (not yet applied to pixels — U3 wires that). **PLAN-09
 now complete — unblocks PLAN-08/U3.**
+
+## PLAN-10 — Quality, Testing & Docs 🟡 in progress — folder [PLAN-10/](PLAN-10/)
+| Task | Phase | Road | Status |
+|---|---|---|---|
+| [core-unit-tests](PLAN-10/Q1-core-unit-tests.md) | Q1 | `../roads/PLAN-10/Q1-core-unit-tests.md` | ACTIVE |
+| [regression](PLAN-10/Q2-regression.md) | Q2 | `../roads/PLAN-10/Q2-regression.md` | ACTIVE |
+| [modularity-docs](PLAN-10/Q3-modularity-docs.md) | Q3 | `../roads/PLAN-10/Q3-modularity-docs.md` | ACTIVE |
+Execution order: Q1 -> Q2 -> Q3 (Q1 ready now). Owner: `tests/` (+ docs at `src/*/`) -> `memory/testing.md`.
+Harness **Decided** (2026-07-02): zero-dep Node/browser runner (`node tests/run.js`, no deps/bundler).
+⭑ To ship: Q1 core suite (math/geometry/materials, hand-computed values); Q2 renderer pixel-hash +
+BVH-vs-linear/early-term/scale regression + engine/save smoke; Q3 import-direction lint + module
+entry-contract docs. **Last unstarted plan.**

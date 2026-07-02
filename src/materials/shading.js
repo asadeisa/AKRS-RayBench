@@ -55,10 +55,15 @@ export function shadeOpaque(albedo, hit, ray, scene, lights, roughness) {
   for (const light of lights) {
     if (isOccluded(scene, hit.point, hit.normal, light)) continue;
 
-    const lightDir = light.position.sub(hit.point).normalize();
+    const toLight = light.position.sub(hit.point);
+    const distanceSq = Math.max(toLight.dot(toLight), 1e-4);
+    const lightDir = toLight.normalize();
     const diffuse = lambertDiffuse(hit.normal, lightDir);
     const specular = blinnPhongSpecular(hit.normal, viewDir, lightDir, shininess);
-    const lightColor = light.color.scale(light.intensity);
+    // Inverse-square falloff: a point light's intensity is radiant power, so it
+    // must attenuate with distance^2 (memory/materials.md). Without it the
+    // intensity-18 room light saturates every lit surface to pure white.
+    const lightColor = light.color.scale(light.intensity / distanceSq);
 
     color = color.add(mulColor(albedo, lightColor).scale(diffuse));
     color = color.add(lightColor.scale(specular));
