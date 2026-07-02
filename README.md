@@ -29,7 +29,7 @@ AKRS **works** as a way to route a small amount of the right knowledge to a chea
 execute correctly without scanning the repo. Over two days, one Leader pass plus a mid-tier Worker
 shipped a working math library, geometry kernel, material system, recursive ray tracer, camera,
 engine runtime, gameplay layer, UI, and performance pass — 10 plans, all closed out, with recorded
-weekly model usage under ~20% in the pro plan subscription .
+weekly model usage under ~24% in the pro plan subscription .
 
 It also has real, named weaknesses. The workflow currently defines "done" by paperwork agreement
 (Road ↔ Memory ↔ STATE), not by whether the feature is observable in the running product. That gap
