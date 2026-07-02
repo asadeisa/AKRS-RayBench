@@ -69,3 +69,31 @@ Execution order: P1 → P2 → P3 → P4 (all landed). Owner: `src/game/` → `m
 Shipped: `src/game/` Room/RoomManager, events + Switch/Door/Collectible + `worldColliders`, an
 additive `interact` edge on `InputManager.poll()`, `beam.js`/`Puzzle.js` (reflective puzzle,
 `LEVEL_WON`), `save.js` (versioned `localStorage` save/load/clear + `snapshot`/`restart`).
+
+## PLAN-08 — UI Shell ✅ complete (U1–U2 live-verified via U3's pass) — folder [PLAN-08/](PLAN-08/)
+| Task | Phase | Road | Status |
+|---|---|---|---|
+| [menus](PLAN-08/U1-menus.md) | U1 | `../roads/PLAN-08/U1-menus.md` | DONE + superseded by memory/ui.md (live-verified) |
+| [overlays](PLAN-08/U2-overlays.md) | U2 | `../roads/PLAN-08/U2-overlays.md` | DONE + superseded by memory/ui.md (live-verified) |
+| [settings](PLAN-08/U3-settings.md) | U3 | `../roads/PLAN-08/U3-settings.md` | DONE + superseded by memory/ui.md |
+Execution order: U1 → U2 → U3 (all landed). Owner: `src/ui/` (+ `index.html`, `src/main.js`) → `memory/ui.md`.
+⭑ Shipped: boot, `App` state machine, Main/Pause menus, FPS + `F3` debug overlay, and now `Settings.js`
+(FOV/AA/depth/sensitivity/invert-Y/resolution + a **live** adaptive-resolution toggle bound to
+PLAN-09's `AdaptiveController`, persisted via the save's opaque `settings` field, applied on
+boot/Continue) + a canvas upscale-on-blit for when the internal buffer is smaller than the canvas.
+Live-verified end-to-end with Playwright (`/run`-equivalent): menu → New Game → PLAYING (renders,
+F3 overlay) → pause → Settings (reachable from both menus) → every control applies live + persists →
+resolution/adaptive changes resize the actual render buffer with no blit gaps → Quit → relaunch →
+Continue restores and reapplies the saved settings.
+
+## PLAN-09 — Performance & Acceleration ✅ complete — unblocks PLAN-08/U3 — folder [PLAN-09/](PLAN-09/)
+| Task | Phase | Road | Status |
+|---|---|---|---|
+| [acceleration](PLAN-09/F1-acceleration.md) | F1 | `../roads/PLAN-09/F1-acceleration.md` | DONE + superseded by memory/performance.md |
+| [adaptive](PLAN-09/F2-adaptive.md) | F2 | `../roads/PLAN-09/F2-adaptive.md` | DONE + superseded by memory/performance.md |
+| [frame-budget](PLAN-09/F3-frame-budget.md) | F3 | `../roads/PLAN-09/F3-frame-budget.md` | DONE + superseded by memory/performance.md |
+Execution order: F1 → F2 → F3 (all landed). Owner: `src/perf/` (+ hooks in `src/render/`, `src/geometry/Scene.js`, `src/main.js`) → `memory/performance.md`.
+⭑ Shipped: `src/perf/` BVH + accelerator seam, `AdaptiveController` + `ProgressiveRefiner`, `FrameBudget`;
+`Renderer.setScale`; early ray termination in `traceRay`; boot times render()-only ms into
+`FrameBudget` → `AdaptiveController.update` (not yet applied to pixels — U3 wires that). **PLAN-09
+now complete — unblocks PLAN-08/U3.**

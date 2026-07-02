@@ -17,12 +17,23 @@ export class Renderer {
     maxDepth = 4,
     samples = 4,
   }) {
+    this.baseWidth = width;
+    this.baseHeight = height;
     this.width = width;
     this.height = height;
     this.background = background;
     this.gamma = gamma;
     this.maxDepth = maxDepth;
     this.samples = samples;
+  }
+
+  // F2 hook: settable internal buffer size, independent of the canvas size
+  // boot upscales to (memory/performance.md — adaptive resolution). scale
+  // 1 recomputes to exactly the constructor's width/height, so render()
+  // output stays byte-identical when adaptive is off.
+  setScale(scale) {
+    this.width = Math.max(1, Math.round(this.baseWidth * scale));
+    this.height = Math.max(1, Math.round(this.baseHeight * scale));
   }
 
   render(camera, scene) {

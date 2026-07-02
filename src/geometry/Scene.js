@@ -8,6 +8,15 @@ export class Scene {
     this.root = root;
     this.renderables = [];
     this.lights = [];
+    this._accelerator = null;
+  }
+
+  // Additive seam for PLAN-09's BVH: geometry does not import perf, the
+  // concrete accelerator is built and injected at boot (or on scene change).
+  // `accel` must duck-type `intersect(ray, tMin, tMax) -> Hit | null`;
+  // `null` restores the linear scan.
+  setAccelerator(accel) {
+    this._accelerator = accel;
   }
 
   build() {
@@ -38,6 +47,8 @@ export class Scene {
   // through here. No acceleration structure yet (PLAN-09 hook is
   // objectBounds()/bounds() below); this is a linear scan.
   intersect(ray, tMin = 1e-4, tMax = Infinity) {
+    if (this._accelerator) return this._accelerator.intersect(ray, tMin, tMax);
+
     let closest = null;
     let closestT = tMax;
     for (const node of this.renderables) {

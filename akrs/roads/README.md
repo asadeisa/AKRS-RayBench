@@ -1,10 +1,13 @@
 # Roads — generated on demand (Phase B / Mode 3)
 A Road is the **execution contract** for one Task and is created **only when that work is
 requested** — never in advance. Exactly **one Road per Task**; the Leader chooses it, the Worker
-follows it. PLAN-01…06 Roads have landed (PLAN-06 E1–E4 complete — engine loop, managers, events +
-collision all shipped). **PLAN-07 (P1–P4) is now complete** — rooms, interactables + wall collision
-(and an additive `interact` input edge), the reflective mirror puzzle, and restart + save/load have
-all shipped; see `memory/gameplay.md` → "Landed".
+follows it. **PLAN-01…09 are all complete, and PLAN-08 (U1–U3) is now fully live-verified in a
+browser** (Playwright, via U3's pass — menu → play → pause → settings → resolution/adaptive → quit →
+relaunch → continue, all confirmed). PLAN-09's F1–F3 built an output-identical adaptive/BVH/budget
+seam; U3 is the first Road to actually apply a non-1 render scale to pixels, with a canvas
+upscale-on-blit to match. One pre-existing, out-of-scope issue was surfaced (not fixed) during
+verification: the reference level's initial camera view is very bright — see `STATE.md` → Open
+questions. **Next: PLAN-10** (regression/testing), the only unstarted Plan.
 
 Naming:
 - PLAN-01/02 (legacy, flat): `roads/<PLAN>-<PHASE>-<slug>.md`, e.g. `roads/PLAN-01-M1-vectors-ray.md`.

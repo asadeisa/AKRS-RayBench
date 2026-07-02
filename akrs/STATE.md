@@ -1,15 +1,139 @@
 # STATE
-Updated: 2026-07-02T13:00Z by claude-code (Worker / Sonnet 5)
+Updated: 2026-07-02T00:00Z by claude-code (Worker / Sonnet 5)
 
 ## Active
-- **PLAN-07 (Gameplay & Puzzles) is complete** — P1 → P2 → P3 → P4 all executed and landed (see
-  Done). `src/game/` now wires engine + geometry + camera + materials into the first playable slice:
-  rooms → interactables/collision → the reflective puzzle → restart/save.
-- PLAN-01 … PLAN-07 are all complete (math, geometry, materials, ray tracer, camera+input, engine,
-  gameplay). **No live browser boot yet** — `Loop` + `Renderer.render(camera, scene)` +
-  `InputManager` + `src/game/` have not been assembled into `src/main.js`; that is PLAN-08 (UI/boot).
+- **PLAN-01 … PLAN-09 are all complete. PLAN-08 (U1–U3) is now fully live-verified in a browser** —
+  Playwright, served over a local static HTTP server (no bundler, per `memory/conventions.md`):
+  menu → New Game → PLAYING (renders, `F3` overlay) → pause (reachable from both menus) → Settings
+  (every control applies live + persists) → resolution/adaptive changes actually resize the render
+  buffer with a correct canvas upscale (no gaps) → Quit → relaunch → Continue restores every setting.
+  **Only unstarted Plan: PLAN-10** (regression/testing).
+- **One pre-existing issue surfaced during this pass, not fixed (out of U3's scope):** the PLAN-07
+  reference level's initial camera view is very bright/blown-out (camera starts near the ceiling
+  point light, intensity 18, ambient 0) — never live-verified before now. See Open questions.
 
 ## Done
+- **PLAN-08/U3 (settings) executed and live-verified with Playwright** (Worker pass). Built
+  `src/ui/Settings.js` (FOV/AA-samples/reflection-depth/mouse-sensitivity/invert-Y/resolution-scale +
+  an adaptive-resolution toggle; reads initial values off live `camera`/`renderer`/`controls`/
+  `adaptiveController` refs; every control applies to its live target immediately and persists via
+  `onPersist`). Edited `src/ui/App.js` (`settings` param, `_openSettings`/`closeSettings` — reachable
+  from both Main and Pause menus, returns to whichever opened it) and `src/ui/index.js` (export
+  `Settings`); `src/ui/ui.css` (panel styles). Wired `src/main.js`: `persistSettings`/`applySettings`
+  (boot + Continue apply a loaded blob to every live target and re-sync the panel); a new `blit(frame)`
+  draws the render buffer onto an offscreen canvas and upscales it onto the visible canvas
+  (`imageSmoothingEnabled = false`) — needed once adaptive can actually shrink the internal buffer;
+  `render()` now calls `renderer.setScale(adaptiveController.currentScale)` whenever
+  `adaptiveController.enabled` — **the first code to apply a non-1 scale to pixels** (F2/F3 built the
+  seam but never called it). **Worker-level decision (Road left it open, caught live in Playwright):**
+  the manual resolution slider and `AdaptiveController`'s `[minScale, maxScale]` band are kept fully
+  independent — an initial design mapped the slider onto `adaptiveController.maxScale`, which collapsed
+  the band to a single point whenever the slider equaled the controller's default `minScale` (0.5),
+  silently disabling adaptation; fixed by leaving the controller's band at its own F2 defaults and only
+  using the slider for the manual (`adaptive: false`) case. Full detail in `memory/ui.md` → Landed (U3).
+  **Live-verified with Playwright** (served over a local static HTTP server — no bundler): every
+  setting control applies live and persists (inspected `localStorage` directly); `F3` debug overlay's
+  `resolution: WxH` confirmed exact buffer resizing for manual scale changes and for the adaptive
+  controller settling at its floor under sustained synthetic load; disabling adaptive instantly
+  restored the manual scale; canvas pixel sampling confirmed the upscale blit fills the canvas with no
+  gaps; a full Quit → simulated relaunch (page reload) → Continue cycle restored every setting exactly.
+  Pause/resume were exercised by dispatching a synthetic `pointerlockchange` event, since
+  `input.requestPointerLock()` throws in this headless test environment (`App`'s pause logic only reads
+  `document.pointerLockElement`, so this is a valid substitute, not a code change). **PLAN-08 (U1–U3)
+  now fully complete and live-verified — the only remaining Plan is PLAN-10.**
+- **PLAN-09/F3 (frame timing & budgets) executed** (Worker pass, per `STATE.md` → Next: F1 → F2 → F3 —
+  **PLAN-09 now complete**). Built `src/perf/FrameBudget.js` (`{ targetMs, window, smoothedMs }`,
+  defaults `targetMs=33`/`window=10`; `sample(ms)` = fixed-size sliding-window moving average).
+  Exported it from `src/perf/index.js`. Wired boot (`src/main.js`): module-level `frameBudget` +
+  `adaptiveController` instances; `render()` now times `renderer.render()` with `performance.now()`
+  (render-only ms, not `Loop.dt`), feeds it through `frameBudget.sample()`, then
+  `adaptiveController.update(smoothedMs)` — computed live every frame but **nothing calls
+  `renderer.setScale()` with it**, so zero pixels change regardless of controller state (kept
+  `enabled=false` by default). Added an optional, backward-compatible `frameBudget` param to
+  `src/ui/DebugOverlay.js` (read-only add: an extra `render: <ms> ms (target <targetMs>)` line,
+  distinct from the existing Loop-dt `frame:` line). Scratch-assert verification passed (7 checks): a
+  single spike moved the smoothed value by ~1/window (not to the spike); smoothed ms tracked sustained
+  rising/falling synthetic render times; a sustained 60ms run (over the 33ms target) pushed a fed
+  `AdaptiveController` down toward `minScale`, a sustained 5ms run afterward recovered it; `targetMs`
+  is runtime-mutable. `memory/performance.md` + `memory/ui.md` + `roads/README.md` updated.
+  **PLAN-09 (F1 + F2 + F3) now complete — unblocks PLAN-08/U3.**
+- **PLAN-09/F2 (progressive + adaptive rendering) executed** (Worker pass, per `STATE.md` → Next: F1 →
+  F2 → F3). Built `src/perf/AdaptiveController.js` (`{ enabled, targetMs, minScale, maxScale,
+  currentScale, step }`; `update(frameMs)` steps `currentScale` down/up around `targetMs`, clamped;
+  `enabled=false` forces `currentScale=1`) and `src/perf/progressive.js` (`ProgressiveRefiner` —
+  `reset()`/`advance()` stepping a scale from `startScale` to `maxScale`, kept simple per the Road's
+  Assumption). Edited `src/render/Renderer.js` (`baseWidth`/`baseHeight` stored at construction;
+  `setScale(scale)` recomputes `width/height = round(base × scale)`; `render()` itself untouched, so
+  `setScale(1)` is byte-identical). Edited `src/perf/index.js` to export both new classes.
+  **Deliberately did not touch `src/main.js`** — the Road's boundaries reserve the canvas upscale/blit
+  and the actual `controller.update` → `renderer.setScale` wiring for PLAN-08/U3; F2 only builds the
+  seam. Scratch-assert verification passed (14 checks): controller scale-down/up/clamp behavior,
+  `enabled=false` override, `Renderer.setScale(1)` byte-identical render vs. no-scale, `setScale(0.5)`
+  correctly halves + `setScale(1)` restores the base buffer size, `ProgressiveRefiner` default/reset/
+  advance/clamp. `memory/performance.md` + `memory/ui.md` updated. **PLAN-09/F2 now complete —
+  unblocks F3; U3 can wire the seam for real once F3 lands.**
+- **PLAN-09/F1 (BVH + early ray termination) executed** (Worker pass, per `STATE.md` → Next: F1 → F2 →
+  F3). Built `src/perf/BVH.js` (median-split tree over `scene.objectBounds()`, `LEAF_SIZE = 4`,
+  `intersect(ray, tMin, tMax)` prunes via `AABB.intersectRay`, leaf-tests each object's own
+  `intersect`, narrows `tMax` — same closest `Hit` as the linear scan) + `src/perf/index.js` barrel.
+  Edited `src/geometry/Scene.js` (additive `setAccelerator(accel)`; `intersect` delegates to the
+  duck-typed accelerator when set, else the unchanged linear scan — no perf import). Edited
+  `src/render/trace.js` (`traceRay` gained a `weight` param tracking accumulated reflection weight;
+  skips recursing into a reflection once `mulColor(weight, reflection.weight)`'s max component drops
+  below `EARLY_TERM_EPS = 1/255`, exported from `trace.js`; depth cap and local-shade math unchanged).
+  Scratch-assert verification passed: BVH matched the linear scan's closest `Hit` over 500 random rays
+  + inside-sphere + all-miss cases; `setAccelerator(bvh)` → `setAccelerator(null)` round-tripped to the
+  identical linear result; a weak reflector (0.02) matched within `EARLY_TERM_EPS` between `maxDepth=2`
+  and `maxDepth=20`; a strong mirror pair (0.95) showed a meaningfully larger accumulated color at
+  `maxDepth=20` vs `maxDepth=3` — early termination isn't over-aggressive. `memory/performance.md`
+  updated with a "Landed" section. **PLAN-09/F1 now complete — unblocks F2.**
+- Phase I (Leader): generated PLAN-09 Tasks + Roads (F1 BVH + early ray termination, F2 progressive +
+  adaptive rendering, F3 frame timing & budgets) in `akrs/tasks/PLAN-09/` + `akrs/roads/PLAN-09/` —
+  **the work that unblocks PLAN-08/U3**. Recorded PLAN-09 decisions in `memory/performance.md`: a
+  `src/perf/BVH.js` over `scene.objectBounds()` behind an additive, duck-typed `Scene.setAccelerator`
+  seam (`scene.intersect` delegates when set, else linear scan; **output-identical**; rebuilt on scene
+  change, not per frame; geometry never imports perf); **early ray termination** in `traceRay` when the
+  remaining reflection weight < `EARLY_TERM_EPS` (a [[conventions]] budget; output-identical within
+  epsilon; depth cap kept); an **`AdaptiveController`** `{ enabled, targetMs, minScale, maxScale,
+  currentScale }` (`update(frameMs) → scale`; `enabled=false` ⇒ scale 1 = byte-identical) — **the U3
+  seam** (toggle binds `enabled`; resolution setting binds `targetMs`/`minScale`), independent of the
+  BVH; progressive coarse→refine (simple); a `src/perf/FrameBudget.js` measuring **render-only ms**,
+  smoothed, with a `targetMs` budget (~33 ms) feeding the controller. Execution order F1 → F2 → F3;
+  F1 ready now. Added the PLAN-09 table in `tasks/README.md`; refreshed `roads/README.md`. Flagged the
+  BVH split, `EARLY_TERM_EPS`, and target-budget assumptions in Open questions.
+- **PLAN-08/U1 (menus & boot) + U2 (overlays) executed** (Worker pass, in order per `STATE.md` →
+  Next). Built the boot: `index.html` (canvas `#view` + overlay roots `#ui`/`#hud`) + `src/main.js`,
+
+## Done
+- **PLAN-08/U1 (menus & boot) + U2 (overlays) executed** (Worker pass, in order per `STATE.md` →
+  Next). Built the boot: `index.html` (canvas `#view` + overlay roots `#ui`/`#hud`) + `src/main.js`,
+  which constructs one concrete level (single room; switch-toggled mirror routes an emitter beam onto
+  a receiver, per the mechanic [[gameplay]]/PLAN-07/P3 fixed but left the numeric layout Unknown) and
+  assembles `Camera`/`Controls`/`InputManager(canvas)`/`Renderer`/`RoomManager`/`Switch`/`Puzzle` into
+  one engine `Loop`. Built `src/ui/App.js` (MENU/PLAYING/PAUSED state machine; pause = pointer-lock
+  exit + release), `MainMenu.js`/`PauseMenu.js` (plain DOM components), `FpsCounter.js` (throttled
+  `loop.timing.fps` readout) and `DebugOverlay.js` (camera/scene/renderer read-only panel, `F3`
+  toggle, PLAYING-only). **Worker-level decisions** (Road left them open): player collision radius
+  = **0.4 m** (answers the STATE open question); Quit-to-menu now **saves a snapshot** (needed so
+  "Continue enabled iff a save exists" is ever true — not spelled out by the Road but required to
+  satisfy its own acceptance criterion). Full detail in `memory/ui.md` → Landed. **Verification is
+  currently syntax-only** (`node --check`, no DOM/browser) — live-browser verification via `/run` is
+  still owed before U3.
+- Phase H (Leader): generated PLAN-08 Tasks + Roads (U1 menus & boot, U2 overlays, U3 settings) in
+  `akrs/tasks/PLAN-08/` + `akrs/roads/PLAN-08/`. Recorded PLAN-08 decisions in `memory/ui.md`: U1 owns
+  the browser **boot** (`index.html` + `src/main.js` assemble camera/controls/`InputManager(canvas)`/
+  renderer/`src/game/` into the engine `Loop`; `render()` blits the DOM-free renderer buffer via
+  `putImageData`); an `App` **state machine** MENU↔PLAYING↔PAUSED (pause = pointer-lock exit, releases
+  the lock; Continue = `save.load()`, Restart = `restart()`); an **input-ownership split** (engine
+  `InputManager` = gameplay input; UI owns its own chrome listeners — menu clicks, `pointerlockchange`,
+  the `F3` debug hotkey); read-only overlays (FPS reads `Loop.timing`; debug reads camera/scene/renderer);
+  a UI-owned **settings blob** `{ resolutionScale, adaptive, fov, samples, maxDepth, mouseSensitivity,
+  invertY }` persisted opaquely in the gameplay save, applied to live targets (`camera.setFov`,
+  `renderer.samples/maxDepth`, `controls`, buffer size) — UI overrides budgets at runtime but does not
+  own their defaults (conventions/camera do). **U3's adaptive toggle is coded to a PLAN-09 hook and
+  persisted inert** until PLAN-09 lands. Execution order U1 → U2 → U3; U1 ready now. Marked PLAN-07
+  complete + added the PLAN-08 table in `tasks/README.md`; refreshed `roads/README.md`. Flagged the
+  U3↔PLAN-09 ordering + boot ownership in Open questions.
 - **PLAN-07 (Gameplay & Puzzles, P1–P4) executed** (Worker pass, in order per `STATE.md` → Next).
   Built `src/game/`: `Room.js` + `RoomManager.js` (opaque `SceneManager` registration, `enter(key)`/
   `update(playerPos)` transition-volume swap); `events.js` (gameplay-owned event names) +
@@ -343,19 +467,17 @@ Updated: 2026-07-02T13:00Z by claude-code (Worker / Sonnet 5)
 - Phase B: generated PLAN-01 Tasks + Roads (M1–M4) in `akrs/tasks/` + `akrs/roads/`; recorded Matrix4 storage + quaternion-consistency decisions in `memory/math.md`.
 
 ## Next
-- **PLAN-07 is done. Start PLAN-08 (UI)** (Leader planning pass first — no PLAN-08 Tasks/Roads exist
-  yet): main-menu "continue" reads `save.load()`; settings own the opaque `settings` blob persisted
-  by `snapshot()`/`save()`; FPS counter reads `Loop`'s `timing` snapshot.
-- The **live browser boot** (assemble `Loop` + `Renderer.render(camera, scene)` + `InputManager` +
-  `src/game/` `RoomManager`/`Puzzle`/etc. into `src/main.js`, wired to a real `<canvas>`) is still
-  unbuilt — likely folded into PLAN-08 or its own step; confirm with the user which Plan owns it.
-- Note: PLAN-07 modules are verified via scratch-assert (synthetic input/positions, stubbed
-  `localStorage`), the project's established pattern — no DOM/browser needed. Formal automated tests
-  are deferred to PLAN-10 across the whole project.
-- Still-open confirms (don't block PLAN-08 planning): the player collision radius (caller-supplied to
-  `Collision.resolve`, gameplay never picked a concrete default), the level-JSON schema (`AssetManager`
-  is format-agnostic), and the ambient-coefficient default (PLAN-04, needed before a reference scene
-  ships). See Open questions.
+- **PLAN-01 … PLAN-09 complete; U1–U3 live-verified. Only PLAN-10 (regression/testing) remains.**
+  Decide the unit-test framework (Open questions) and build a formal regression suite covering: BVH
+  vs. linear-scan equality, early-termination epsilon bound, adaptive-resolution scale math + the
+  canvas-upscale blit, and the settings persist/apply round-trip — all currently covered only by
+  scratch-assert + one manual Playwright pass, not an automated suite.
+- **Investigate the reference level's blown-out initial view** (surfaced during U3's live-verify pass,
+  not fixed): the camera starts near a `intensity: 18` point light with `scene.ambient` unset (0
+  fallback) — worth confirming whether this is the intended look or a level-tuning gap. Not blocking;
+  gameplay (switch → mirror → `LEVEL_WON`) was not re-verified visually in this pass, only settings/UI
+  plumbing was.
+- Still-open, non-blocking: player collision radius, level-JSON schema, ambient default (see below).
 
 ## Open questions
 - **Coordinate convention** — assume right-handed, +Y up, camera looks −Z? (owner: `memory/conventions.md`; assumption, confirm)
@@ -366,13 +488,24 @@ Updated: 2026-07-02T13:00Z by claude-code (Worker / Sonnet 5)
 - **Framework removal** — `02-Generation §7` says strip `docs/akrs/framework/` from a shipped project. Kept here intentionally (it is this repo's versioned source and your confirmed Source of Truth). Confirm keep vs. move-before-ship.
 - **Ambient coefficient numeric default** — `materials.shade()` reads `scene.ambient`, falling
   back to 0 (neutral) when unset; no scene currently sets a non-zero default. (owner:
-  `memory/conventions.md`; confirm the intended default before a reference scene ships.)
+  `memory/conventions.md`; confirm the intended default before a reference scene ships.) **Likely
+  related to a finding from live-verifying U3**: the PLAN-07 reference level's initial camera view
+  renders very bright/blown-out (camera starts close to an `intensity: 18` point light, ambient=0) —
+  first time this level was seen in an actual browser. May just need `scene.ambient` set, spawn moved
+  further from the light, or the light's intensity tuned down; needs a look, not diagnosed further here.
 - **Player collision proxy** — E4 shipped `Collision.resolve` with a **caller-supplied radius** (no
   engine default). Confirm the gameplay player radius (~0.3 m sphere) when P2 wires collision. (owner:
   `memory/gameplay.md`; assumption, confirm during P2)
 - **Asset / level file format** — assume **JSON** level descriptors, with the schema owned by
   [[gameplay]] (PLAN-07)? `AssetManager` is format-agnostic (async cache); only the schema is
   deferred. (owner: `memory/engine.md` → [[gameplay]]; assumption, confirm)
+- **BVH split strategy (F1)** — assume **median split** over `objectBounds()` (vs SAH)? Simpler, and
+  output is identical either way — only build/traversal cost differs. (owner: `memory/performance.md`; assumption, confirm)
+- **`EARLY_TERM_EPS` (F1)** — the reflection-weight cutoff for early termination. Assume a small value
+  (e.g. ~1/255 in linear terms); output-identical within epsilon. Promote to a [[conventions]] budget
+  if it needs one canonical owner. (owner: `memory/performance.md`; assumption, confirm)
+- **Target frame budget (F3)** — assume **~33 ms (30 fps)** as the adaptive controller's `targetMs`
+  default? User-tunable via U3's resolution/quality setting. (owner: `memory/performance.md`; assumption, confirm)
 - **Reflective puzzle mechanic (P3)** — landed as assumed: a switch-toggled movable mirror routes a
   reflecting beam onto a receiver → `LEVEL_WON` (`src/game/beam.js` + `Puzzle.js`, reusing
   `scene.intersect` + `material.reflect` + `maxDepth`). Confirm the *numeric layout* of a real level
@@ -380,6 +513,16 @@ Updated: 2026-07-02T13:00Z by claude-code (Worker / Sonnet 5)
 - **`interact` input edge** — landed: `InputManager.poll()` returns an additive `interact` field
   (`KeyE`, edge-detected, poll-and-clear); `Controls` + existing fields unchanged. Recorded in
   `memory/camera-input.md` + `memory/engine.md`.
+- **PLAN-08 boot ownership** — RESOLVED: `index.html` + `src/main.js` are owned by **PLAN-08/U1** (boot
+  assembles `Loop` + renderer + input + `src/game/`). Answers the earlier "which Plan owns the boot".
+- **U3 ↔ PLAN-09 ordering** — RESOLVED: PLAN-09 (F1–F3) was built first, so U3 wired the adaptive
+  toggle live from the start — no inert seam was ever shipped.
+- **Debug/pause hotkeys** — `F3` toggles the debug overlay (confirmed live). Pause = pointer-lock-exit
+  could not be exercised via a genuine lock in the Playwright/headless environment
+  (`requestPointerLock()` throws there — a test-environment limitation, not a code issue); verified
+  instead by dispatching a synthetic `pointerlockchange` event, since `App`'s pause logic only reads
+  `document.pointerLockElement`. Still worth a real-browser (non-headless) click-through at some point
+  to confirm actual pointer lock acquisition end-to-end. (owner: `memory/ui.md`.)
 - **Mirror-orientation implementation** — `Puzzle` swaps the mirror's own geometry `normal` in place
   (not a `Node` rotation, since geometry `intersect()` ignores `Node` transforms). A Worker-level
   choice the Road left open; confirm it's the intended long-term approach before PLAN-09 (BVH) or any
